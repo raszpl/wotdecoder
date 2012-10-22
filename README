@@ -5,7 +5,7 @@ World Of Tanks replay file parser/clanwar filter written in Python 3.
 
 Usage
 -----
-Put replay.py in G:\World_of_Tanks\replays directory.
+Put wotrepparser.py in G:\World_of_Tanks\replays directory.
 When executed it will create 3 subridectories (clanwars, incomplete, complete) and move replay files accordingly.
 
 It will also rename clanwar replay files.
