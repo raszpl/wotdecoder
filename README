@@ -6,7 +6,7 @@ World Of Tanks replay file parser/clanwar filter written in Python 3.
 Wotrepparser filters all of your replay files and sorts them into three categories:
 clanwars   - full replay files containing clanwar match.
 incomplete - replays from matches you quit before they ended.
-complete   - complete replays .
+complete   - complete replays.
 Additionally it will rename your clanwar replays so they are more palatable.
 
 Usage
