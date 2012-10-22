@@ -17,7 +17,7 @@ Where SERB is a tag of a clan starting on first flag. PCP is a tag of a clan sta
        cw20120814_1939_PCP___CSM___Los_T110_07_lakeville.wotreplay
 Here PCP started on first flag, owner of replay file lost the match.
 
-Undercores are used to align text so its readable on fixed width console (basically a DIR in command prompt).
+Underscores are used to align text so its readable on fixed width console (basically a DIR in command prompt).
 Format can be easity edited further in replay.py.
 
 
