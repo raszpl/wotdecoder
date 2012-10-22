@@ -74,8 +74,11 @@ def main():
 
       f.close()
 
+# This prints out JSON heared containing all the info at the start of the map
+#     pprint (first_chunk_decoded)
+
+
 # dont remember what this commented out part did, probly used it during development :P
- #     pprint (first_chunk_decoded)
 #     print (first_chunk.decode("utf-8"))
 
 # list clantags of ur team 
@@ -143,10 +146,15 @@ def main():
 #      shutil.copy2(files, newfile)
       shutil.move(files, newfile)
 
-        
-#      pprint (second_chunk_decoded[0])
+
+# This prints out JSON header containing all the info at the end of the map        
+#      pprint (second_chunk_decoded)
       
-      
+
+
+
+# dont remember what this commented out part did, probly used it during development :P
+     
   #    for a in first_chunk_decoded['vehicles']:
  #       clan = first_chunk_decoded['vehicles'][a]['clanAbbrev']
  #       if (struct.unpack("i",f.read(4))[0])==2: 
