@@ -21,6 +21,10 @@ Undercores are used to align text so its readable on fixed width console (basica
 Format can be easity edited further in replay.py.
 
 
+Requirements
+------------
+Python 3 http://www.python.org/
+
 Credits
 -------
 Based on information from http://blog.wot-replays.org/
