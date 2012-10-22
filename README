@@ -3,10 +3,19 @@ wotrepparser
 
 World Of Tanks replay file parser/clanwar filter written in Python 3.
 
+Wotrepparser filters all of your replay files and sorts them into three categories:
+clanwars   - full replay files containing clanwar match.
+incomplete - replays from matches you quit before they ended.
+complete   - complete replays .
+Additionally it will rename your clanwar replays so they are more palatable.
+
 Usage
 -----
-Put wotrepparser.py in G:\World_of_Tanks\replays directory.
-When executed it will create 3 subridectories (clanwars, incomplete, complete) and move replay files accordingly.
+Copy wotrepparser.py to your \World_of_Tanks\replays directory.
+Open command prompt in \World_of_Tanks\replays.
+Type (patch to your Python3 install dir)\python.exe wotrepparser.py
+
+When executed it will create 3 subdirectories (clanwars, incomplete, complete) and move replay files accordingly.
 
 It will also rename clanwar replay files.
        20120811_2134_usa-T110_07_lakeville.wotreplay
@@ -18,7 +27,7 @@ Where SERB is a tag of a clan starting on first flag. PCP is a tag of a clan sta
 Here PCP started on first flag, owner of replay file lost the match.
 
 Underscores are used to align text so its readable on fixed width console (basically a DIR in command prompt).
-Format can be easity edited further in replay.py.
+Format can be easily edited further in wotrepparser.py.
 
 
 Requirements
