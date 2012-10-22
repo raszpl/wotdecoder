@@ -7,15 +7,16 @@ Usage
 -----
 Put replay.py in G:\World_of_Tanks\replays directory.
 When executed it will create 3 subridectories (clanwars, incomplete, complete) and move replay files accordingly.
+
 It will also rename clanwar replay files.
        20120811_2134_usa-T110_07_lakeville.wotreplay
 becomes
        cw20120811_2134_SERB__PCP___Win_T110_07_lakeville.wotreplay
-
 Where SERB is a tag of a clan starting on first flag. PCP is a tag of a clan starting on the second flag. Win obviously means owner of a replay file won.
-Accordingly
+
        cw20120814_1939_PCP___CSM___Los_T110_07_lakeville.wotreplay
-here PCP started on first flag, owner of replay file lost the match.
+Here PCP started on first flag, owner of replay file lost the match.
+
 Undercores are used to align text so its readable on fixed width console (basically a DIR in command prompt).
 Format can be easity edited further in replay.py.
 
