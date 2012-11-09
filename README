@@ -28,9 +28,12 @@ Here PCP started on first flag, owner of replay file lost the match.
 
 Underscores are used to align text so its readable on fixed width console (basically a DIR in command prompt).
 Format can be easily edited further in wotrepparser.py.
+
+
 You can also create your own filters, for more details uncomment 
 #pprint (first_chunk_decoded)
 #pprint (second_chunk_decoded)
+As an example findplayer.py will scan all of your replay files looking for specific player name (given as a parameter).
 
 
 Compatibility
