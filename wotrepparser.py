@@ -51,35 +51,57 @@ def main():
   t1 = time.clock()
 
   for files in custom_listdir("."):
-   if files.endswith(".wotreplay"):
+   if (files.endswith(".wotreplay") and files!="temp.wotreplay"):
 
      while True:
       processing = 0
       f = open(files, "rb")
       f.seek(4)
 
-      if (struct.unpack("i",f.read(4))[0]==1): processing =1; f.close(); break
+      blocks = struct.unpack("i",f.read(4))[0]
 
-#      f.seek(0,2)
-#      size = f.tell()
-      f.seek(8)
-      first_size = struct.unpack("i",f.read(4))
-#      print (first_size[0], files)
-      first_chunk = f.read(first_size[0])
+# 8.1 Adds new unencrypted Python pickle block containing your match stats
+# Before 8.1 (< 20121101) 
+#  Json + binary = 1 = incomplete.
+#  Json + Json + binary = 2 = complete.
+# After  8.1 (>=20121101)
+#  Json + binary = 1 = incomplete. 
+#  Json + pickle + binary = 2 = incomplete !!!WTF!!! 
+#  Json + Json + pickle + binary = 3 = complete.
+# Sadly there is no version number in Json, and date is unreliable because its local time. Replays saved on day of
+# patch are dicey and some completed ones might be counted as incomplete due to patch downtime not being synced 
+# with local time.
+
+
+#      f.seek(8)
+      first_size = struct.unpack("i",f.read(4))[0]
+#      print (first_size, files)
+
+      first_chunk = f.read(first_size)
       first_chunk_decoded = json.loads(first_chunk.decode('utf-8'))
+      
+      if (blocks==1): processing =1; f.close(); break
+# blocks==1 is always incomplete
 
-      second_size = struct.unpack("i",f.read(4))
-      second_chunk = f.read(second_size[0])
+      if ((datetime.strptime(first_chunk_decoded['dateTime'][0:10], "%d.%m.%Y") >= datetime(2012, 11, 1)) and blocks==2): processing =1; break
+# >=20121101 and blocks==2 means incomplete
+# sadly there is still possibility we just stopped processing valid completed replay
+      		
+      
+      second_size = struct.unpack("i",f.read(4))[0]
+#      print (second_size, files)
+
+      second_chunk = f.read(second_size)
       second_chunk_decoded = json.loads(second_chunk.decode('utf-8'))
+#      pprint (second_chunk_decoded)
 
       f.close()
 
 # This prints out JSON heared containing all the info at the start of the map
 #     pprint (first_chunk_decoded)
+# This prints out JSON heared containing map results = scores, damage, awards
+#     pprint (second_chunk_decoded)
 
-
-# dont remember what this commented out part did, probly used it during development :P
-#     print (first_chunk.decode("utf-8"))
 
 # list clantags of ur team 
  #     for a in first_chunk_decoded['vehicles']:
@@ -147,13 +169,8 @@ def main():
       shutil.move(files, newfile)
 
 
-# This prints out JSON header containing all the info at the end of the map        
-#      pprint (second_chunk_decoded)
-      
-
-
-
-# dont remember what this commented out part did, probly used it during development :P
+# dont remember what this commented out part did, I used it during development
+# might be usefull if you are trying to write some custom filters
      
   #    for a in first_chunk_decoded['vehicles']:
  #       clan = first_chunk_decoded['vehicles'][a]['clanAbbrev']
@@ -195,9 +212,9 @@ def main():
               10: ''
              }
 
+# uncomment those to see what is happening with processed files
 #     print ()
 #     print (files)
-
 #     print (wazup[processing])
 
      if processing==1:
