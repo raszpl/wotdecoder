@@ -83,7 +83,7 @@ def main():
       if (blocks==1): processing =1; f.close(); break
 # blocks==1 is always incomplete
 
-      if ((datetime.strptime(first_chunk_decoded['dateTime'][0:10], "%d.%m.%Y") >= datetime(2012, 11, 1)) and blocks==2): processing =1; break
+      if ((datetime.strptime(first_chunk_decoded['dateTime'][0:10], "%d.%m.%Y") >= datetime(2012, 11, 1)) and blocks==2): processing =1; f.close(); break
 # >=20121101 and blocks==2 means incomplete
 # sadly there is still possibility we just stopped processing valid completed replay
       		
