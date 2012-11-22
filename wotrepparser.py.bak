@@ -34,16 +34,6 @@ import os
 import shutil
 # most of those imports are redundand, im lazy like that
 
-wazup = {
-              0: 'Processing',
-              1: 'Incomplete replay',
-              2: 'No compatible blocks found, file is all binary?',
-              3: 'Same team clan mismatch',
-              4: 'Opposite team clan mismatch',
-              5: 'Same clan on both sides, WTF?',
-              11: 'No fog of war = not a clanwar',
-              10: 'CW'
-        }
 
 def custom_listdir(path):
 # Returns the content of a directory by showing directories first
@@ -67,6 +57,7 @@ def main():
       processing = 0
       f = open(files, "rb")
       f.seek(4)
+
       blocks = struct.unpack("i",f.read(4))[0]
 
 # 8.1 Adds new unencrypted Python pickle block containing your match stats
@@ -86,19 +77,16 @@ def main():
       first_size = struct.unpack("i",f.read(4))[0]
 #      print (first_size, files)
 
-      if (blocks==1): processing =1; f.close(); break
-# blocks==1 is always incomplete
-
-      if ((blocks!=2) and (blocks!=3)): processing =2; f.close(); break
-# We can only process blocks==2 or 3
-
       first_chunk = f.read(first_size)
       first_chunk_decoded = json.loads(first_chunk.decode('utf-8'))
+      
+      if (blocks==1): processing =1; f.close(); break
+# blocks==1 is always incomplete
 
       if ((datetime.strptime(first_chunk_decoded['dateTime'][0:10], "%d.%m.%Y") >= datetime(2012, 11, 1)) and blocks==2): processing =1; f.close(); break
 # >=20121101 and blocks==2 means incomplete
 # sadly there is still possibility we just stopped processing valid completed replay
-          
+      		
       
       second_size = struct.unpack("i",f.read(4))[0]
 #      print (second_size, files)
@@ -133,6 +121,7 @@ def main():
 
       if (len(first_chunk_decoded['vehicles'])==len(second_chunk_decoded[1])): processing =11; break
 
+
       first_tag = ""
       first_team = ""
       second_tag = ""
@@ -145,15 +134,40 @@ def main():
        elif (a['team'] != first_team) and (a['clanAbbrev'] != first_tag) and (second_tag == ""):
         second_tag = a['clanAbbrev']
        elif (a['team'] == first_team) and (a['clanAbbrev'] != first_tag):
-        processing =3; break
+        processing =3
        elif (a['team'] != first_team) and (a['clanAbbrev'] == first_tag):
-        processing =5; break
+        processing =5
        elif (a['team'] != first_team) and (a['clanAbbrev'] != second_tag):
-        processing =4; break
+        processing =4
 
         
-# At this point we are sure this is a CW
-      processing =10; break
+      if processing !=0: break
+
+
+      if first_team != 1:
+       first_tag, second_tag = second_tag, first_tag
+      print ("CW between",first_tag,"and", second_tag)
+
+      d = datetime.strptime(first_chunk_decoded['dateTime'], '%d.%m.%Y %H:%M:%S')
+      d= d.strftime('%Y%m%d_%H%M')
+      
+      if second_chunk_decoded[0]['isWinner']==1: winlose="Win"
+      else : winlose="Los"
+
+      if not os.path.exists("clanwars"):
+        os.makedirs("clanwars")
+
+      print (files)
+      first_tag = first_tag +"_"*(5-len(first_tag))
+      second_tag = second_tag +"_"*(5-len(second_tag))
+# You can change cw filename format here.
+      newfile = "clanwars/"+"cw"+d+"_"+first_tag+"_"+second_tag+"_"+winlose+"_"+"-".join(first_chunk_decoded['playerVehicle'].split("-")[1:])+"_"+first_chunk_decoded['mapName']+".wotreplay"
+      print (newfile)
+
+# move or copy? too lazy to make it a command line parameter
+#      shutil.copy2(files, newfile)
+      shutil.move(files, newfile)
+
 
 # dont remember what this commented out part did, I used it during development
 # might be usefull if you are trying to write some custom filters
@@ -185,6 +199,18 @@ def main():
   #     print (second_chunk_decoded[1][a]['clanAbbrev'])
     
 
+      processing =10; break
+
+     wazup = {
+              0: 'Processing',
+              1: 'incomplete replay',
+              2: 'blah',
+              3: 'same team clan mismatch',
+              4: 'opposite team clan mismatch',
+              5: 'same clan on both sides, WTF?',
+              11: 'no fog of war = not a clanwar',
+              10: ''
+             }
 
 # uncomment those to see what is happening with processed files
 #     print ()
@@ -197,47 +223,14 @@ def main():
 # move or copy? too lazy to make it a command line parameter       
 #      shutil.copy(files, "incomplete/"+files)
       shutil.move(files, "incomplete/"+files)
-      print ()
-      print ("Incomplete --> ", files)
 
-     elif processing==10:
-      if not os.path.exists("clanwars"):
-        os.makedirs("clanwars")
-      
-      if first_team != 1:
-       first_tag, second_tag = second_tag, first_tag
-      print ()
-      print ("CW between",first_tag,"and", second_tag)
-
-      d = datetime.strptime(first_chunk_decoded['dateTime'], '%d.%m.%Y %H:%M:%S')
-      d= d.strftime('%Y%m%d_%H%M')
-      
-      if second_chunk_decoded[0]['isWinner']==1: winlose="Win"
-      else : winlose="Los"
-
-      first_tag = first_tag +"_"*(5-len(first_tag))
-      second_tag = second_tag +"_"*(5-len(second_tag))
-# You can change cw filename format here.
-      newfile = "clanwars/"+"cw"+d+"_"+first_tag+"_"+second_tag+"_"+winlose+"_"+"-".join(first_chunk_decoded['playerVehicle'].split("-")[1:])+"_"+first_chunk_decoded['mapName']+".wotreplay"
-
-# move or copy? too lazy to make it a command line parameter
-#      shutil.copy2(files, newfile)
-      shutil.move(files, newfile)
-      print ("CW --> ", newfile)
-
-     elif processing==11:
+     if processing==11:
       if not os.path.exists("complete"):
        os.makedirs("complete")
 # move or copy? too lazy to make it a command line parameter
 #      shutil.copy(files, "complete/"+files)
       shutil.move(files, "complete/"+files)
-      print ()
-      print ("Complete --> ", files)
 
-     else:
-      print ()
-      print (files)
-      print (wazup[processing])
 
 
   t2 = time.clock()
