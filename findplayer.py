@@ -65,7 +65,7 @@ def main():
     elif arg.startswith("-") :
     	              sys.exit("Findplayer can search for players using nickname and/or clantag." 
     	                       "\nusage:" \
-    	                       "\nfindplayer nickname [clantag] -c -o" \
+    	                       "\nfindplayer nickname [clantag] -c -o -s" \
     	                       "\nTry `*` for string wildcard, `?` for character wildcard." \
     	                       "\n-c forces case sensitive search." \
     	                       "\n-o shows replay owner stats where possible." \
