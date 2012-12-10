@@ -75,8 +75,8 @@ def main():
 # Prepare regex filters
   regexnickname = fnmatch.translate(nickname)
   regexclantag = fnmatch.translate(clantag)
-  reobjnickname = re.compile(regexnickname)
-  reobjclantag = re.compile(regexclantag)
+  reobjnickname = re.compile(regexnickname, re.IGNORECASE)
+  reobjclantag = re.compile(regexclantag, re.IGNORECASE)
 
 # Prepare list of .wotreplay files in current dir, ./incomplete/ ./complete/ and ./clanwars/
   listdir = custom_listfiles(".") + ["./incomplete/" + i for i in custom_listfiles("./incomplete/")] + ["./complete/" + i for i in custom_listfiles("./complete/")] + ["./clanwars/" + i for i in custom_listfiles("./clanwars/")]
@@ -115,7 +115,7 @@ def main():
           second_size = struct.unpack("i",f.read(4))[0]
           second_chunk = f.read(second_size)
           second_chunk_decoded = json.loads(second_chunk.decode('utf-8'))
-          print ("frags =", second_chunk_decoded[2][a]['frags'],",",("Loss","Win")[second_chunk_decoded[0]['isWinner']==1],",",("Died","Survived")[second_chunk_decoded[1][a]['isAlive']==1],"in",second_chunk_decoded[1][a]['vehicleType'])
+          print ("frags =", second_chunk_decoded[2][a]['frags'],",",("Loss","Win ")[second_chunk_decoded[0]['isWinner']==1],",",("Died","Survived")[second_chunk_decoded[1][a]['isAlive']==1],"in",second_chunk_decoded[1][a]['vehicleType'])
       f.close() 
       break
 
