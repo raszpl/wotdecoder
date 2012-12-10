@@ -49,17 +49,27 @@ def main():
   t1 = time.clock()
 
 # Parse parameters
-  if len(sys.argv) == 1 or len(sys.argv) > 3: sys.argv[1:] = ["-h"]
+  if len(sys.argv) == 1: sys.argv[1:] = ["-h"]
     
   nickname = "*"
   clantag = "*"
+  owner = 0
+  silent = 1
+  csens = re.IGNORECASE
+
   for arg in sys.argv[1:]:
 #    print (arg)
-    if arg.startswith("-") : 
+    if arg == "-o" : owner = 1
+    elif arg == "-c" : csens = 0
+    elif arg == "-s" : silent = 0
+    elif arg.startswith("-") :
     	              sys.exit("Findplayer can search for players using nickname and/or clantag." 
     	                       "\nusage:" \
-    	                       "\nfindplayer nickname [clantag]" \
-    	                       "\nTry `*` for string wildcard, `?` for character wildcard. Searching is case insensitive." \
+    	                       "\nfindplayer nickname [clantag] -c -o" \
+    	                       "\nTry `*` for string wildcard, `?` for character wildcard." \
+    	                       "\n-c forces case sensitive search." \
+    	                       "\n-o shows replay owner stats where possible." \
+    	                       "\n-s silent, only list names." \
     	                       "\nExamples:" \
     	                       "\n`*z_?l [1?3]` will match Rasz_pl[123]" \
     	                       "\n`[*]` will match any person in any clan." \
@@ -75,8 +85,8 @@ def main():
 # Prepare regex filters
   regexnickname = fnmatch.translate(nickname)
   regexclantag = fnmatch.translate(clantag)
-  reobjnickname = re.compile(regexnickname, re.IGNORECASE)
-  reobjclantag = re.compile(regexclantag, re.IGNORECASE)
+  reobjnickname = re.compile(regexnickname, csens)
+  reobjclantag = re.compile(regexclantag, csens)
 
 # Prepare list of .wotreplay files in current dir, ./incomplete/ ./complete/ and ./clanwars/
   listdir = custom_listfiles(".") + ["./incomplete/" + i for i in custom_listfiles("./incomplete/")] + ["./complete/" + i for i in custom_listfiles("./complete/")] + ["./clanwars/" + i for i in custom_listfiles("./clanwars/")]
@@ -101,22 +111,29 @@ def main():
 #        print (name,"["+clan+"]")
         
         if reobjnickname.match(name) and reobjclantag.match(clan):
-          print (name,"["+clan+"]","    ",files)
+          print (name+"["+clan+"]", end="")
           
-          f.seek(4)
-          blocks = struct.unpack("i",f.read(4))[0]
-          if (blocks==1): f.close(); break
+          if silent:
+           
+           print ("    ",files)
+           f.seek(4)
+           blocks = struct.unpack("i",f.read(4))[0]
+           if (blocks==1): f.close(); break
 # Battle summary Json only available when blocks==2 or 3
-          if ((blocks!=2) and (blocks!=3)): processing =2; f.close(); break
-          if ((datetime.strptime(first_chunk_decoded['dateTime'][0:10], "%d.%m.%Y") >= datetime(2012, 11, 1)) and blocks==2): f.close(); break
+           if ((blocks!=2) and (blocks!=3)): processing =2; f.close(); break
+           if ((datetime.strptime(first_chunk_decoded['dateTime'][0:10], "%d.%m.%Y") >= datetime(2012, 11, 1)) and blocks==2): f.close(); break
 # >=20121101 and blocks==2 means incomplete
 
-          f.seek(12+first_size)
-          second_size = struct.unpack("i",f.read(4))[0]
-          second_chunk = f.read(second_size)
-          second_chunk_decoded = json.loads(second_chunk.decode('utf-8'))
-          print ("frags =", second_chunk_decoded[2][a]['frags'],",",("Loss","Win ")[second_chunk_decoded[0]['isWinner']==1],",",("Died","Survived")[second_chunk_decoded[1][a]['isAlive']==1],"in",second_chunk_decoded[1][a]['vehicleType'])
-      f.close() 
+           f.seek(12+first_size)
+           second_size = struct.unpack("i",f.read(4))[0]
+           second_chunk = f.read(second_size)
+           second_chunk_decoded = json.loads(second_chunk.decode('utf-8'))
+
+           print ("frags=", second_chunk_decoded[2][a]['frags'],("Died","Survived")[second_chunk_decoded[1][a]['isAlive']==1],"in",second_chunk_decoded[1][a]['vehicleType'].split(":")[1], end="")
+           if owner: print ("  | ", first_chunk_decoded['playerName'],"frags=",len(second_chunk_decoded[0]['killed']), ("Died","Survived")[second_chunk_decoded[0]['killerID']==0],"in","-".join(first_chunk_decoded['playerVehicle'].split("-")[1:]), end="")
+           print ("  | ",("Loss","Win ")[second_chunk_decoded[0]['isWinner']==1],"on",first_chunk_decoded['mapDisplayName'])
+          else : print ("")
+      f.close()
       break
 
 
