@@ -45,14 +45,12 @@ wazup = {
               10: 'CW'
         }
 
-def custom_listdir(path):
-# Returns the content of a directory by showing directories first
-# and then files by ordering the names alphabetically
+def custom_listfiles(path):
+# Returns the list of .wotreplay files by ordering the names alphabetically. Omits temp.wotreplay.
 
-  dirs = sorted([d for d in os.listdir(path) if os.path.isdir(path + os.path.sep + d)])
-  dirs.extend(sorted([f for f in os.listdir(path) if os.path.isfile(path + os.path.sep + f)]))
+  files = sorted([f for f in os.listdir(path) if os.path.isfile(path + os.path.sep + f) and f.endswith(".wotreplay") and f!="temp.wotreplay"])
 
-  return dirs
+  return files
 
 
 def main():
@@ -60,9 +58,7 @@ def main():
   file = "1"
   t1 = time.clock()
 
-  for files in custom_listdir("."):
-   if (files.endswith(".wotreplay") and files!="temp.wotreplay"):
-
+  for files in custom_listfiles("."):
      while True:
       processing = 0
       f = open(files, "rb")
@@ -212,8 +208,7 @@ def main():
       d = datetime.strptime(first_chunk_decoded['dateTime'], '%d.%m.%Y %H:%M:%S')
       d= d.strftime('%Y%m%d_%H%M')
       
-      if second_chunk_decoded[0]['isWinner']==1: winlose="Win"
-      else : winlose="Los"
+      winlose=("Loss","Win")[second_chunk_decoded[0]['isWinner']==1]
 
       first_tag = first_tag +"_"*(5-len(first_tag))
       second_tag = second_tag +"_"*(5-len(second_tag))
@@ -242,7 +237,7 @@ def main():
 
   t2 = time.clock()
   print ()
-  print  ("Shit took %0.3fms"  % ((t2-t1)*1000))
+  print  ("Processing took %0.3fms"  % ((t2-t1)*1000))
 
 
 main()

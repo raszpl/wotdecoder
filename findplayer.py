@@ -32,38 +32,63 @@ from pprint import pprint
 from datetime import datetime
 import os
 import shutil
-import pickle
+import fnmatch, re
 # most of those imports are redundand, im lazy like that
 
 
-def custom_listdir(path):
-# Returns the content of a directory by showing directories first
-# and then files by ordering the names alphabetically
+def custom_listfiles(path):
+# Returns the list of .wotreplay files by ordering the names alphabetically. Omits temp.wotreplay.
 
-  dirs = sorted([d for d in os.listdir(path) if os.path.isdir(path + os.path.sep + d)])
-  dirs.extend(sorted([f for f in os.listdir(path) if os.path.isfile(path + os.path.sep + f)]))
+  files = sorted([f for f in os.listdir(path) if os.path.isfile(path + os.path.sep + f) and f.endswith(".wotreplay") and f!="temp.wotreplay"])
 
-  return dirs
+  return files
 
 
 def main():
 
-  file = "1"
   t1 = time.clock()
 
-# Ready current dir, ./incomplete/ ./complete/ and ./clanwars/
-  listdir = custom_listdir(".") + ["./incomplete/" + i for i in custom_listdir("./incomplete/")] + ["./complete/" + i for i in custom_listdir("./complete/")] + ["./clanwars/" + i for i in custom_listdir("./clanwars/")]
-#  print (listdir)
-  
-  if len(sys.argv) < 2: sys.exit("Give name of a player you want to find as a parameter")
+# Parse parameters
+  if len(sys.argv) == 1 or len(sys.argv) > 3: sys.argv[1:] = ["-h"]
+    
+  nickname = "*"
+  clantag = "*"
+  for arg in sys.argv[1:]:
+#    print (arg)
+    if arg.startswith("-") : 
+    	              sys.exit("Findplayer can search for players using nickname and/or clantag." 
+    	                       "\nusage:" \
+    	                       "\nfindplayer nickname [clantag]" \
+    	                       "\nTry `*` for string wildcard, `?` for character wildcard. Searching is case insensitive." \
+    	                       "\nExamples:" \
+    	                       "\n`*z_?l [1?3]` will match Rasz_pl[123]" \
+    	                       "\n`[*]` will match any person in any clan." \
+    	                       "\n`[]` will only match people without clan." \
+    	                       "\n`??` will list all people with 2 letter nicknames." \
+    	                       "\n`*` will match everyone.")
+    elif arg.startswith("[") and arg.endswith("]"): clantag = arg[1:-1]
+    else : nickname = arg
 
-  lookingfor = sys.argv[1]
+
+  print ("Looking for nickname:", nickname, " clantag:", clantag)
+
+# Prepare regex filters
+  regexnickname = fnmatch.translate(nickname)
+  regexclantag = fnmatch.translate(clantag)
+  reobjnickname = re.compile(regexnickname)
+  reobjclantag = re.compile(regexclantag)
+
+# Prepare list of .wotreplay files in current dir, ./incomplete/ ./complete/ and ./clanwars/
+  listdir = custom_listfiles(".") + ["./incomplete/" + i for i in custom_listfiles("./incomplete/")] + ["./complete/" + i for i in custom_listfiles("./complete/")] + ["./clanwars/" + i for i in custom_listfiles("./clanwars/")]
 
   for files in listdir:
-   if (files.endswith(".wotreplay") and not files.endswith("temp.wotreplay")):
-
+     while True:
       f = open(files, "rb")
-      f.seek(8)
+      f.seek(4)
+      blocks = struct.unpack("i",f.read(4))[0]
+# Json data is only in files with blocks==1, 2 or 3
+      if ((blocks!=1) and (blocks!=2) and (blocks!=3)): f.close(); break
+
       first_size = struct.unpack("i",f.read(4))[0]
       first_chunk = f.read(first_size)
       first_chunk_decoded = json.loads(first_chunk.decode('utf-8'))
@@ -75,25 +100,29 @@ def main():
         clan = first_chunk_decoded['vehicles'][a]['clanAbbrev']
 #        print (name,"["+clan+"]")
         
-        if name == lookingfor:
+        if reobjnickname.match(name) and reobjclantag.match(clan):
           print (name,"["+clan+"]","    ",files)
           
           f.seek(4)
           blocks = struct.unpack("i",f.read(4))[0]
           if (blocks==1): f.close(); break
-          if ((datetime.strptime(first_chunk_decoded['dateTime'][0:10], "%d.%m.%Y") >= datetime(2012, 11, 1)) and blocks==2): break
+# Battle summary Json only available when blocks==2 or 3
+          if ((blocks!=2) and (blocks!=3)): processing =2; f.close(); break
+          if ((datetime.strptime(first_chunk_decoded['dateTime'][0:10], "%d.%m.%Y") >= datetime(2012, 11, 1)) and blocks==2): f.close(); break
+# >=20121101 and blocks==2 means incomplete
+
           f.seek(12+first_size)
           second_size = struct.unpack("i",f.read(4))[0]
           second_chunk = f.read(second_size)
           second_chunk_decoded = json.loads(second_chunk.decode('utf-8'))
-          print ("frags =", second_chunk_decoded[2][a]['frags'])
-       
+          print ("frags =", second_chunk_decoded[2][a]['frags'],",",("Loss","Win")[second_chunk_decoded[0]['isWinner']==1],",",("Died","Survived")[second_chunk_decoded[1][a]['isAlive']==1],"in",second_chunk_decoded[1][a]['vehicleType'])
       f.close() 
+      break
 
 
   t2 = time.clock()
   print ()
-  print  ("Shit took %0.3fms"  % ((t2-t1)*1000))
+  print  ("Processing took %0.3fms"  % ((t2-t1)*1000))
 
 
 main()
