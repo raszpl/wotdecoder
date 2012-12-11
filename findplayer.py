@@ -63,19 +63,19 @@ def main():
     elif arg == "-c" : csens = 0
     elif arg == "-s" : silent = 0
     elif arg.startswith("-") :
-    	              sys.exit("Findplayer can search for players using nickname and/or clantag." 
-    	                       "\nusage:" \
-    	                       "\nfindplayer nickname [clantag] -c -o -s" \
-    	                       "\nTry `*` for string wildcard, `?` for character wildcard." \
-    	                       "\n-c forces case sensitive search." \
-    	                       "\n-o shows replay owner stats where possible." \
-    	                       "\n-s silent, only list names." \
-    	                       "\nExamples:" \
-    	                       "\n`*z_?l [1?3]` will match Rasz_pl[123]" \
-    	                       "\n`[*]` will match any person in any clan." \
-    	                       "\n`[]` will only match people without clan." \
-    	                       "\n`??` will list all people with 2 letter nicknames." \
-    	                       "\n`*` will match everyone.")
+                    sys.exit("Findplayer can search for players using nickname and/or clantag." 
+                             "\nusage:" \
+                             "\nfindplayer nickname [clantag] -c -o -s" \
+                             "\nTry `*` for string wildcard, `?` for character wildcard." \
+                             "\n-c forces case sensitive search." \
+                             "\n-o shows replay owner stats where possible." \
+                             "\n-s silent, only list names." \
+                             "\nExamples:" \
+                             "\n`*z_?l [1?3]` will match Rasz_pl[123]" \
+                             "\n`[*]` will match any person in any clan." \
+                             "\n`[]` will only match people without clan." \
+                             "\n`??` will list all people with 2 letter nicknames." \
+                             "\n`*` will match everyone.")
     elif arg.startswith("[") and arg.endswith("]"): clantag = arg[1:-1]
     else : nickname = arg
 
@@ -93,6 +93,7 @@ def main():
 
   for files in listdir:
      while True:
+      if os.path.getsize(files)<100 : break
       f = open(files, "rb")
       f.seek(4)
       blocks = struct.unpack("i",f.read(4))[0]
@@ -100,6 +101,9 @@ def main():
       if ((blocks!=1) and (blocks!=2) and (blocks!=3)): f.close(); break
 
       first_size = struct.unpack("i",f.read(4))[0]
+      
+      if os.path.getsize(files)<(12+first_size) : break
+
       first_chunk = f.read(first_size)
       first_chunk_decoded = json.loads(first_chunk.decode('utf-8'))
 
@@ -125,7 +129,13 @@ def main():
 # >=20121101 and blocks==2 means incomplete
 
            f.seek(12+first_size)
+
+           if os.path.getsize(files)<(14+first_size) : break
+
            second_size = struct.unpack("i",f.read(4))[0]
+
+           if os.path.getsize(files)<(12+first_size+second_size) : break
+
            second_chunk = f.read(second_size)
            second_chunk_decoded = json.loads(second_chunk.decode('utf-8'))
 

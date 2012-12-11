@@ -41,6 +41,7 @@ wazup = {
               3: 'Same team clan mismatch',
               4: 'Opposite team clan mismatch',
               5: 'Same clan on both sides, WTF?',
+              6: 'File too small to be a valid replay',
               11: 'No fog of war = not a clanwar',
               10: 'CW'
         }
@@ -63,6 +64,9 @@ def main():
   for files in listdir:
      while True:
       processing = 0
+
+      if os.path.getsize(files)<100 : processing =6; break
+      
       f = open(files, "rb")
       f.seek(4)
       blocks = struct.unpack("i",f.read(4))[0]
@@ -83,6 +87,8 @@ def main():
 #      f.seek(8)
       first_size = struct.unpack("i",f.read(4))[0]
 #      print (first_size, files)
+
+      if os.path.getsize(files)<(12+first_size) : processing =6; break
 
       if (blocks==1): processing =1; f.close(); break
 # blocks==1 is always incomplete
