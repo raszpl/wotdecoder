@@ -55,10 +55,12 @@ def custom_listfiles(path):
 
 def main():
 
-  file = "1"
   t1 = time.clock()
 
-  for files in custom_listfiles("."):
+# Prepare list of .wotreplay files in current dir
+  listdir = custom_listfiles(".")
+
+  for files in listdir:
      while True:
       processing = 0
       f = open(files, "rb")
@@ -237,7 +239,7 @@ def main():
 
   t2 = time.clock()
   print ()
-  print  ("Processing took %0.3fms"  % ((t2-t1)*1000))
+  print  ("Processing "+str(len(listdir))+" files took %0.3fms"  % ((t2-t1)*1000))
 
 
 main()

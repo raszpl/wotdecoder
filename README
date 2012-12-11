@@ -36,14 +36,18 @@ You can also create your own filters, for more details uncomment
 
 As an example Findplayer.py can search for players using nickname and/or clantag.
 usage:
-findplayer nickname [clantag]
-Try `*` for string wildcard, `?` for character wildcard. Searching is case insensitive.
+findplayer nickname [clantag] -c -o -s
+Try `*` for string wildcard, `?` for character wildcard.
+-c forces case sensitive search.
+-o shows replay owner stats where possible.
+-s silent, only list names.
 Examples:
 `*z_?l [1?3]` will match Rasz_pl[123]
 `[*]` will match any person in any clan.
 `[]` will only match people without clan.
 `??` will list all people with 2 letter nicknames.
 `*` will match everyone.
+
 
 Compatibility
 -------------

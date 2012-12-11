@@ -139,7 +139,7 @@ def main():
 
   t2 = time.clock()
   print ()
-  print  ("Processing took %0.3fms"  % ((t2-t1)*1000))
+  print  ("Processing "+str(len(listdir))+" files took %0.3fms"  % ((t2-t1)*1000))
 
 
 main()
