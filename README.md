@@ -165,6 +165,6 @@ Python 3 http://www.python.org/
 
 #Credits
 -------
-Based on
-http://blog.wot-replays.org
-https://github.com/Phalynx/WoT-Dossier-Cache-to-JSON
+Based on  
+http://blog.wot-replays.org  
+https://github.com/Phalynx/WoT-Dossier-Cache-to-JSON  
