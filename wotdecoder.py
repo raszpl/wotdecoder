@@ -20,6 +20,7 @@
 
 import struct
 import json
+from pprint import pprint
 from datetime import datetime
 import os
 import io
@@ -621,7 +622,7 @@ maps   = {
               49:   ('47_canada_a','Serene Coast'),
               2021: ('00_tank_tutorial','Training area')
          }
-
+mode   = ["ctf", "domination", "assault"]
 
 
 
@@ -748,17 +749,22 @@ def replay(filename, to_decode):
 
   f.close()
 
-  if chunks_bitmask&4 and chunks_bitmask&1: #lets check if pickle belongs to this replay, this is very weak check, still passes some bad ones
-    if maps[ third_chunk_decoded['common']['arenaTypeID'] & 65535 ][0] !=first_chunk_decoded['mapName']:
+  if chunks_bitmask&4 and chunks_bitmask&1:
+# lets check if pickle belongs to this replay
+# this is weak check, we only compare map and game mode, It can still pass some corrupted ones
+    if maps[ third_chunk_decoded['common']['arenaTypeID'] & 65535 ][0] !=first_chunk_decoded['mapName'] or \
+       mode[ third_chunk_decoded['common']['arenaTypeID'] >>16] != first_chunk_decoded['gameplayID']:
+#      print("EERRRROOOORRRrrrrrr!!!one77")
+#      print("json:  ", first_chunk_decoded['mapName'])
+#      print("pickle:", maps[ third_chunk_decoded['common']['arenaTypeID'] & 65535 ][0])
+#      print("json:  ", first_chunk_decoded['gameplayID'])
+#      print("pickle:", mode[ third_chunk_decoded['common']['arenaTypeID'] >>16])
       processing = 8
       chunks_bitmask = chunks_bitmask^4
       third_chunk_decoded = {}
 #      print(datetime.strptime(chunks[0]['dateTime'], '%d.%m.%Y %H:%M:%S'))
-#      print( chunks[0]['mapName'])
 #      print( datetime.fromtimestamp(chunks[2]['common']['arenaCreateTime']))
 #      print( mapidname[ chunks[2]['common']['arenaTypeID'] & 65535 ])
-
-
 
 
 # returns decoded_chunk[0:3], bitmap of available chunks, decoder status
@@ -799,15 +805,15 @@ def battle_result(filename):
   common_decoded["vehLockMode"]= common_to_decode[6]
   common_decoded["gameplayID"]= common_to_decode[0] >>16
 
-#  common_decoded["guiType"]= common_to_decode[7]
+#  common_decoded["guiType"]= common_to_decode[7] #? maybe?
 
 # Some additional variables Phalynx's www.vbaddict.net/wot uses.
 #  common_decoded["arenaCreateTimeH"]= #datetime.datetime.fromtimestamp(common_to_decode[1]).strftime("%Y-%m-%d %H:%M:%S")
-#  common_decoded["arenaTypeIcon"]= #needs map lookup table
-#  common_decoded["arenaTypeName"]= #needs map lookup table
+#  common_decoded["arenaTypeIcon"]= # who cares about the icon blah
+#  common_decoded["arenaTypeName"]= # maps[arenaTypeID & 65535]
 #  common_decoded["bonusTypeName"]= #1=public 2=training 3=tankcompany 5=cw
 #  common_decoded["finishReasonName"]= #1=extermination, 2=base, 3=timeout
-#  common_decoded["gameplayName"]= #0=random/ctf, 1=domination 2=assault
+#  common_decoded["gameplayName"]= # (arenaTypeID >>16) 0=random/ctf, 1=domination 2=assault
 #  common_decoded["gameplayTypeID"]= #probably created because Phalynx parses gameplayID wrong way :)
 
 
