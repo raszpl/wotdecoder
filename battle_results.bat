@@ -1,14 +1,13 @@
 @echo off
 
-rem ### Set INDIR to
-rem %APPDATA%\Wargaming.net\WorldOfTanks\battle_results\
-rem or %APPDATA%\Roaming\Wargaming.net\WorldOfTanks\battle_results\
-
-set INDIR="%APPDATA%\Wargaming.net\WorldOfTanks\battle_results\"
-
-rem set OUTDIR wherever you like, I suggest same place where you keep replays.
-
+rem ### Set OUTDIR wherever you like. Default is same place as replays.
 set OUTDIR=".\replays\battle_results\"
+
+rem ### lets try both potential locations just in case
+set INDIR="%APPDATA%\Wargaming.net\WorldOfTanks\battle_results\"
+for /R %INDIR% %%a in (*.dat) do xcopy "%%a" %OUTDIR% /q /y
+
+set INDIR="%APPDATA%\Roaming\Wargaming.net\WorldOfTanks\battle_results\"
 for /R %INDIR% %%a in (*.dat) do xcopy "%%a" %OUTDIR% /q /y
 
 rem ### This is where you start the game. Uncomment the one you like or write your own.

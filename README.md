@@ -152,7 +152,23 @@ Processing 4804 files took 15348.317ms
 ```
 
 
-You can also create your own filters, for more details look into the code.
+
+
+## battle_results.bat
+
+Use it to start your game . It will automagically backup your battle_results. WOT keeps them only for
+one session, every time you start the game it deletes old ones. This bat file will recursively look into 
+
+  %APPDATA%\Wargaming.net\WorldOfTanks\battle_results\  
+  %APPDATA%\Roaming\Wargaming.net\WorldOfTanks\battle_results\  
+
+and copy all .dat files it can find to .\replays\battle_results\
+
+###Usage
+-----
+Umm, copy into your game directory and start the game with it.
+
+
 
 
 #Compatibility
