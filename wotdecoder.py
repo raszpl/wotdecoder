@@ -253,7 +253,7 @@ class _Unpickler:
         dest = bytearray(4)
         for deind, val in enumerate(bla):
           dest[deind]= val
-        
+
         len = (dest[3]<< 24)+(dest[2]<< 16)+(dest[1]<< 8)+dest[0]
         self.append(self.read(len))
     dispatch[BINSTRING]= load_binstring
@@ -556,13 +556,13 @@ class _Decoder:
       vehicle["achievements"]= data[22]
       vehicle["repair"]= data[23]
       vehicle["freeXP"]= data[24]
-      vehicle["details"]= _Decoder.decode_details(data[25].decode('unicode_escape')) 
+      vehicle["details"]= _Decoder.decode_details(data[25].decode('unicode_escape'))
       vehicle["accountDBID"]= data[26]
       vehicle["team"]= data[27]
       vehicle["typeCompDescr"]= data[28]
       vehicle["gold"]= data[29]
       return vehicle
-#    vehicle["achievementlist"]= 
+#    vehicle["achievementlist"]=
 #    vehicle["countryID"]= #look up tanks.json
 #    vehicle["tankID"]= data[28] >>8 #8 upper bits of typeCompDescr
 #    vehicle["tankName"]= #look up tanks.json
@@ -574,7 +574,8 @@ status = {
               2: 'Incomplete (past 8.1), with \'Battle Result\' pickle.',
               3: 'Complete (pre 8.1).',
               4: 'Complete (past 8.1).',
-              9: 'Bugged (past 8.1). Game crashed somewhere, second Json has game score',
+              6: 'Bugged (past 8.1). Game crashed somewhere, second Json has game score',
+              8: 'Bugged (past 8.1). Only first Json available, pickle from wrong replay',
               10: 'File too small to be a valid replay.',
               11: 'Invalid Magic number. This is not a wotreplay file.',
               12: 'Broken replay file, most likely game crashed while recording. It still has some (maybe valid) battle result data.',
@@ -584,6 +585,44 @@ status = {
               16: 'No compatible blocks found, can only process blocks 1-3',
               20: 'Something went wrong!'
          }
+maps   = {
+              1:    ('01_karelia','Karelia'),
+              2:    ('02_malinovka','Malinovka'),
+              3:    ('04_himmelsdorf','Himmelsdorf'),
+              4:    ('05_prohorovka','Prokhorovka'),
+              5:    ('07_lakeville','Lakeville'),
+              6:    ('06_ensk','Ensk'),
+              7:    ('11_murovanka','Murovanka'),
+              8:    ('13_erlenberg','Erlenberg'),
+              9:    ('10_hills','Mines'),
+              10:   ('15_komarin','Komarin'),
+              11:   ('18_cliff','Cliff'),
+              12:   ('19_monastery','Abbey'),
+              13:   ('28_desert','Sand River'),
+              14:   ('35_steppes','Steppes'),
+              15:   ('37_caucasus','Mountain Pass'),
+              16:   ('33_fjord','Fjords'),
+              17:   ('34_redshire','Redshire'),
+              18:   ('36_fishing_bay','Fisherman\'s Bay'),
+              19:   ('38_mannerheim_line','Arctic Region'),
+              20:   ('08_ruinberg','Ruinberg'),
+              21:   ('14_siegfried_line','Siegfried Line'),
+              22:   ('22_slough','Swamp'),
+              23:   ('23_westfeld','Westfield'),
+              24:   ('29_el_hallouf','El Halluf'),
+              26:   ('31_airfield','Airfield'),
+              27:   ('03_campania','Province'),
+              28:   ('17_munchen','Widepark'),
+              31:   ('44_north_america','Live Oaks'),
+              32:   ('39_crimea','Highway'),
+              34:   ('45_north_america','South Coast'),
+              36:   ('42_north_america','Port'),
+              44:   ('51_asia','Dragon Ridge'),
+              49:   ('47_canada_a','Serene Coast'),
+              2021: ('00_tank_tutorial','Training area')
+         }
+
+
 
 
 def replay(filename, to_decode):
@@ -611,11 +650,11 @@ def replay(filename, to_decode):
     blocks = struct.unpack("i",f.read(4))[0]
 
 # 8.1 Adds new unencrypted Python pickle block containing your match stats
-# Before 8.1 (< 20121101) 
+# Before 8.1 (< 20121101)
 #  Json + binary = 1 = incomplete.
 #  Json + Json + binary = 2 = complete.
 # After  8.1 (>=20121101)
-#  Json + binary = 1 = incomplete. 
+#  Json + binary = 1 = incomplete.
 #  Json + pickle + binary = 2 = incomplete, but you looked at 'Battle Result' screen and replay got updated.
 #  Json + Json + pickle + binary = 3 = complete.
 # Some oddities:
@@ -679,7 +718,7 @@ def replay(filename, to_decode):
           processing =3; break
         else:
 # Bugged (past 8.1). Game crashed somewhere, second Json has game result.
-          processing =9; break
+          processing =6; break
 
 # >=20121101 and blocks==3 means Complete (past 8.1).
     elif (replaydate >= datetime(2012, 11, 1)) and blocks==3:
@@ -703,11 +742,25 @@ def replay(filename, to_decode):
       else: processing =14; break
 
 
-# All states that we can handle broke out of the While loop at this point. 
+# All states that we can handle broke out of the While loop at this point.
 # Unhandled cases trigger this.
-    processing =20; break 
+    processing =20; break
 
   f.close()
+
+  if chunks_bitmask&4 and chunks_bitmask&1: #lets check if pickle belongs to this replay, this is very weak check, still passes some bad ones
+    if maps[ third_chunk_decoded['common']['arenaTypeID'] & 65535 ][0] !=first_chunk_decoded['mapName']:
+      processing = 8
+      chunks_bitmask = chunks_bitmask^4
+      third_chunk_decoded = {}
+#      print(datetime.strptime(chunks[0]['dateTime'], '%d.%m.%Y %H:%M:%S'))
+#      print( chunks[0]['mapName'])
+#      print( datetime.fromtimestamp(chunks[2]['common']['arenaCreateTime']))
+#      print( mapidname[ chunks[2]['common']['arenaTypeID'] & 65535 ])
+
+
+
+
 # returns decoded_chunk[0:3], bitmap of available chunks, decoder status
   return (("", first_chunk_decoded)[to_decode & 1], second_chunk_decoded, third_chunk_decoded), chunks_bitmask, processing
 
@@ -786,7 +839,7 @@ def battle_result(filename):
   personal_decoded["dossierPopUps"]= personal_to_decode[49]
 
 # Some additional variables Phalynx's www.vbaddict.net/wot uses.
-#  personal_decoded["won"]= 
+#  personal_decoded["won"]=
 
   players_to_decode = preliminary[1]
   players_decoded = {}

@@ -49,14 +49,14 @@ def main():
   nickname = "*"
   clantag = "*"
   csens = re.IGNORECASE
-  verbose = 1
+  verbose = 4
   show_errors = False
   owner = False
   recursive = True
   full_path = False
   battle_result = False
   source = os.getcwd()
-  
+
 # Parse arguments
   skip = -1
   for argind, arg in enumerate(sys.argv[1:]):
@@ -81,7 +81,7 @@ def main():
       skip = argind+1
 
     elif arg in ("-h", "-?") or arg.startswith("-") :
-                    sys.exit("findplayer scans replay files for players using nickname and/or clantag." 
+                    sys.exit("findplayer scans replay files for players using nickname and/or clantag."
                              "\nUsage:" \
                              "\n\nfindplayer nickname [clantag] -c -v0..3 -e -o -r -p -b -i input_file_or_directory" \
                              "\n\nTry `*` for string wildcard, `?` for character wildcard." \
@@ -158,11 +158,12 @@ def main():
   for files in listdir:
     while True:
 
-      if verbose < 2:
-        scan_mask = 1 #1 means try to only decode first block (binary 001)
-      else:
-        scan_mask = 7 #7 means decode everything (binary 111)
-      
+#      if verbose < 2:
+#        scan_mask = 1 #1 means try to only decode first block (binary 001)
+#      else:
+#        scan_mask = 7 #7 means decode everything (binary 111)
+      scan_mask = 7 #above speeds -v0 -v1 scanning x3, but it doesnt detect certain errors, defaulting to slower method
+
       if battle_result:
         chunks = ["", "", ""]
         chunks[2] = wotdecoder.battle_result(files)
@@ -178,6 +179,19 @@ def main():
 #      pprint (chunks[2]['personal']['accountDBID'])
 #      pprint (chunks[2]['players'][ chunks[2]['personal']['accountDBID'] ]['name'])
 
+#      pprint(chunks)
+
+#      print(datetime.strptime(chunks[0]['dateTime'], '%d.%m.%Y %H:%M:%S'))
+#      print(chunks[2]['common']['arenaCreateTime'])
+#      print( (datetime.fromtimestamp(chunks[2]['common']['arenaCreateTime'])- datetime(1970, 1, 1, 0, 0)).total_seconds())
+
+
+#      print(datetime.strptime(chunks[0]['dateTime'], '%d.%m.%Y %H:%M:%S').timestamp())
+#      xx = (datetime.fromtimestamp(chunks[2]['common']['arenaCreateTime'])- datetime(1970, 1, 1, 0, 0)).total_seconds()
+#      print( datetime.fromtimestamp(chunks[2]['common']['arenaCreateTime']))
+#      print( datetime.fromtimestamp(xx))
+#      print( mapidname[ chunks[2]['common']['arenaTypeID'] & 65535 ])
+#      print( chunks[0]['mapName'])
 
       if (processing >=10) or (not chunks_bitmask&5): #ignore replays with errors, must have at least first Json or pickle
         errors += 1
@@ -187,6 +201,14 @@ def main():
           print (wotdecoder.status[processing])
           print ("---", end="")
         break
+
+      if processing >=6: #show error messages for recoverable errors
+        errors += 1
+        if show_errors:
+          print ("\n\n---")
+          print ("", ("",os.path.dirname(files)+os.path.sep)[full_path] + os.path.basename(files))
+          print (wotdecoder.status[processing])
+          print ("---", end="")
 
       match = False
       player_found = 0
@@ -208,7 +230,7 @@ def main():
       for player in vehicles:
         check_player_name = vehicles[player]['name']
         check_player_clan = vehicles[player]['clanAbbrev']
-        
+
         if not match and reobjnickname.match(check_player_name) and reobjclantag.match(check_player_clan):
           match = True
           matches += 1
@@ -275,8 +297,12 @@ def main():
                 owner_string_kills = ""
                 owner_string_tank = ""
               print ("{0:8} in {1:<27}{2:39}".format(("Died","Survived")[ chunks[1][1][player_found]['isAlive']==1 ], chunks[1][1][player_found]['vehicleType'].split(":")[1], owner_string_tank))
-              print ("Kills  ={0:>5}{1:26}{2:39}".format(chunks[1][2][player_found]['frags'], "", owner_string_kills))
-              player_kills += chunks[1][2][player_found]['frags']
+              if player_found in chunks[1][2]: #WTF WG, why Y hate sanity? sometimes not all player frag counts saved :/
+                frags = chunks[1][2][player_found]['frags']
+              else:
+                frags = 0
+              print ("Kills  ={0:>5}{1:26}{2:39}".format(frags, "", owner_string_kills))
+              player_kills += frags
               matches_kills += 1
 
 
@@ -301,13 +327,15 @@ def main():
           timestamp = datetime.fromtimestamp(chunks[2]['common']['arenaCreateTime']).strftime('%Y%m%d_%H%M')
           print ("Belongs to~", timestamp+"_"+tank[ chunks[2]['vehicles'][vehicle_owner_found]['typeCompDescr'] ]+"_"+mapidname[ chunks[2]['common']['arenaTypeID'] & 65535 ]+".wotreplay")
 
-            
+
 
       break
 
 
   if matches > 0:
-    if verbose >3: # stats summary
+    if verbose >3 and (matches_kills!=0 or matches_stats!=0) : # stats summary
+      if matches_kills==0: matches_kills =1 #lets not divide by zero today :)
+      if matches_stats==0: matches_stats =1
       if owner:
         owner_string_kills = "| Kills  ={0:>9.2f}".format( owner_kills/matches_kills )
         owner_string_damage = "| Damage ={0:>9.2f}".format( owner_damage/matches_stats )
