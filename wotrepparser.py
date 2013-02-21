@@ -113,16 +113,16 @@ def main():
 #  listdir += custom_listfiles("G:\\World_of_Tanks\\replays\\incomplete\\", "wotreplay", False)
 #  listdir = {"G:\\World_of_Tanks\\replays\\incomplete\\20121213_0553_usa-T110_39_crimea.wotreplay"}
 
-  if not os.path.exists("clanwar"):
-    os.makedirs("clanwar")
-  if not os.path.exists("incomplete"):
-    os.makedirs("incomplete")
-  if not os.path.exists("result"):
-    os.makedirs("result")
-  if not os.path.exists("complete"):
-    os.makedirs("complete")
-  if not os.path.exists("error"):
-    os.makedirs("error")
+  if not os.path.exists(output + os.path.sep + "clanwar"):
+    os.makedirs(output + os.path.sep + "clanwar")
+  if not os.path.exists(output + os.path.sep + "incomplete"):
+    os.makedirs(output + os.path.sep + "incomplete")
+  if not os.path.exists(output + os.path.sep + "result"):
+    os.makedirs(output + os.path.sep + "result")
+  if not os.path.exists(output + os.path.sep + "complete"):
+    os.makedirs(output + os.path.sep + "complete")
+  if not os.path.exists(output + os.path.sep + "error"):
+    os.makedirs(output + os.path.sep + "error")
 
   errors = 0
   for files in listdir:
