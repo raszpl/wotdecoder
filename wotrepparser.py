@@ -32,220 +32,159 @@ from pprint import pprint
 from datetime import datetime
 import os
 import shutil
+import fnmatch, re
+import wotdecoder
 # most of those imports are redundand, im lazy like that
 
-wazup = {
-              0: 'Processing',
-              1: 'Incomplete replay',
-              2: 'No compatible blocks found, file is all binary?',
-              3: 'Same team clan mismatch',
-              4: 'Opposite team clan mismatch',
-              5: 'Same clan on both sides, WTF?',
-              6: 'File too small to be a valid replay',
-              11: 'No fog of war = not a clanwar',
-              10: 'CW'
-        }
 
-def custom_listfiles(path):
-# Returns the list of .wotreplay files by ordering the names alphabetically. Omits temp.wotreplay.
-
-  files = sorted([f for f in os.listdir(path) if os.path.isfile(path + os.path.sep + f) and f.endswith(".wotreplay") and f!="temp.wotreplay"])
-
+# Returns the list of .extension files in path directory. Omit skip file. Can be recursive.
+def custom_listfiles(path, extension, recursive, skip = None):
+  if recursive:
+    files = []
+    for root, subFolders, filename in os.walk(path):
+      for f in filename:
+        if f.endswith("."+extension) and f!=skip:
+          files.append(os.path.join(root,f))
+  else:
+    files = [os.path.join(path, f) for f in os.listdir(path) if os.path.isfile(path + os.path.sep + f) and f.endswith("."+extension) and f!=skip]
   return files
+
 
 
 def main():
 
+  verbose = False
+  recursive = False
+  rename = True
+  moving = True
+  source = os.getcwd()
+  output = os.getcwd()
+  skip = -1
+  
+# Parse arguments
+  for argind, arg in enumerate(sys.argv[1:]):
+    if argind == skip: pass
+    elif arg == "-v" : verbose = True
+    elif arg == "-r" : recursive = True
+    elif arg == "-n" : rename = False
+    elif arg == "-c" : moving = False
+    elif arg == "-o" :
+      if len(sys.argv) <= argind+2:
+        sys.exit("\nUnspecified Output directory.")
+      output = sys.argv[argind+2]
+      skip = argind+1
+
+      if not os.path.isdir(output):
+        print("\nOutput directory: "+output+" doesnt exist. Creating.")
+        try:
+          os.makedirs(output)
+        except:
+          sys.exit("Cant create "+output)
+
+    elif arg in ("-h", "-?") or arg.startswith("-") :
+                    sys.exit("wotrepparser scans replay files and sorts them into categories (incomplete, result, complete, clanwar, error)." 
+                             "\nUsage:" \
+                             "\n\nwotrepparser file_or_directory -o output_directory -v -r -n" \
+                             "\n\n-o  Specify output directory. Default is current." \
+                             "\n-v  Verbose, display every file processed." \
+                             "\n-r  Recursive scan of all subdirectories." \
+                             "\n-n  Dont rename files." \
+                             "\n-c  Copy instead of moving.")
+    elif source == os.getcwd():
+      if not os.path.exists(arg):
+        sys.exit("\n"+arg+" doesnt exist.")
+      source = arg
+
+
+  print ("\nSource:", source)
+  print ("Output:", output)
+  print ("Moving:", moving, "Rename:", rename, "Verbose:", verbose, "Recursive:", recursive, "\n")
+
+
   t1 = time.clock()
 
-# Prepare list of .wotreplay files in current dir
-  listdir = custom_listfiles(".")
+  if os.path.isfile(source):
+    listdir = [source]
+  else:
+    listdir = custom_listfiles(source, "wotreplay", recursive, "temp.wotreplay")
 
+#  listdir = custom_listfiles("G:\\World_of_Tanks\\replays\\clanwars\\", "wotreplay", False)
+#  listdir += custom_listfiles("G:\\World_of_Tanks\\replays\\complete\\", "wotreplay", False)
+#  listdir += custom_listfiles("G:\\World_of_Tanks\\replays\\incomplete\\", "wotreplay", False)
+#  listdir = {"G:\\World_of_Tanks\\replays\\incomplete\\20121213_0553_usa-T110_39_crimea.wotreplay"}
+
+  if not os.path.exists("clanwar"):
+    os.makedirs("clanwar")
+  if not os.path.exists("incomplete"):
+    os.makedirs("incomplete")
+  if not os.path.exists("result"):
+    os.makedirs("result")
+  if not os.path.exists("complete"):
+    os.makedirs("complete")
+
+  errors = 0
   for files in listdir:
-     while True:
-      processing = 0
+    while True:
+      chunks, chunks_bitmask, processing = wotdecoder.replay(files,7) #7 means try to decode all three blocks (binary 111)
 
-      if os.path.getsize(files)<100 : processing =6; break
+      if processing >=10: #decoder encountered an error
+        dest_index = 5
+        errors += 1
+      else:
+        date = datetime.strptime(chunks[0]['dateTime'], '%d.%m.%Y %H:%M:%S').strftime('%Y%m%d_%H%M')
+        dest = ["incomplete", "result", "complete", "complete", "clanwar", "error"]
+        dest_index = processing-1
       
-      f = open(files, "rb")
-      f.seek(4)
-      blocks = struct.unpack("i",f.read(4))[0]
+      if processing == 9: #mangled replay, but still have some useful data, lets treat it like Incomplete
+        dest_index = 0
 
-# 8.1 Adds new unencrypted Python pickle block containing your match stats
-# Before 8.1 (< 20121101) 
-#  Json + binary = 1 = incomplete.
-#  Json + Json + binary = 2 = complete.
-# After  8.1 (>=20121101)
-#  Json + binary = 1 = incomplete. 
-#  Json + pickle + binary = 2 = incomplete !!!WTF!!! 
-#  Json + Json + pickle + binary = 3 = complete.
-# Sadly there is no version number in Json, and date is unreliable because its local time. Replays saved on day of
-# patch are dicey and some completed ones might be counted as incomplete due to patch downtime not being synced 
-# with local time.
+      if (processing == 3 and (len(chunks[0]['vehicles'])!=len(chunks[1][1]))) or \
+         (processing == 4 and chunks[2]['common']['bonusType'] == 5): #cw
 
+        clan_tag = ["", ""]
+        dest_index = 4
+        if rename:
+          for playind, player in enumerate(chunks[1][1]):
+            if playind == 0:
+              first_tag = chunks[1][1][player]['clanAbbrev']
+              clan_tag[chunks[1][1][player]['team'] - 1] = chunks[1][1][player]['clanAbbrev']
+            elif first_tag != chunks[1][1][player]['clanAbbrev']:
+              clan_tag[chunks[1][1][player]['team'] - 1] = chunks[1][1][player]['clanAbbrev']
+              break
 
-#      f.seek(8)
-      first_size = struct.unpack("i",f.read(4))[0]
-#      print (first_size, files)
+          winlose=("Loss","Win_")[chunks[1][0]['isWinner']==1]
 
-      if os.path.getsize(files)<(12+first_size) : processing =6; break
+          clan_tag[0] = clan_tag[0] +"_"*(5-len(clan_tag[0]))
+          clan_tag[1] = clan_tag[1] +"_"*(5-len(clan_tag[1]))
 
-      if (blocks==1): processing =1; f.close(); break
-# blocks==1 is always incomplete
-
-      if ((blocks!=2) and (blocks!=3)): processing =2; f.close(); break
-# We can only process blocks==2 or 3
-
-      first_chunk = f.read(first_size)
-      first_chunk_decoded = json.loads(first_chunk.decode('utf-8'))
-
-      if ((datetime.strptime(first_chunk_decoded['dateTime'][0:10], "%d.%m.%Y") >= datetime(2012, 11, 1)) and blocks==2): processing =1; f.close(); break
-# >=20121101 and blocks==2 means incomplete
-# sadly there is still possibility we just stopped processing valid completed replay
-          
-      
-      second_size = struct.unpack("i",f.read(4))[0]
-#      print (second_size, files)
-
-      second_chunk = f.read(second_size)
-      second_chunk_decoded = json.loads(second_chunk.decode('utf-8'))
-#      pprint (second_chunk_decoded)
-
-      f.close()
-
-# This prints out JSON heared containing all the info at the start of the map
-#     pprint (first_chunk_decoded)
-# This prints out JSON heared containing map results = scores, damage, awards
-#     pprint (second_chunk_decoded)
-
-
-# list clantags of ur team 
- #     for a in first_chunk_decoded['vehicles']:
-  #      print (first_chunk_decoded['vehicles'][a]['clanAbbrev'])
-
-
-#      for a in first_chunk_decoded:
-
- #     pprint (first_chunk_decoded)
- #     print (first_chunk_decoded['playerID'])
-#      print (first_chunk_decoded['vehicles'][first_chunk_decoded['playerID']])
-#      print (" number of players: ",len(first_chunk_decoded['vehicles']))
-      
-#      count = len(first_chunk_decoded['vehicles'])
-      #print ( first_chunk_decoded['vehicles'][first_chunk_decoded['vehicles'].keys()[0]] )
-
-
-      if (len(first_chunk_decoded['vehicles'])==len(second_chunk_decoded[1])): processing =11; break
-
-      first_tag = ""
-      first_team = ""
-      second_tag = ""
-
-      for num in second_chunk_decoded[1]:
-       a = second_chunk_decoded[1][num]
-       if (first_tag == ""):
-        first_tag = a['clanAbbrev']
-        first_team = a['team']
-       elif (a['team'] != first_team) and (a['clanAbbrev'] != first_tag) and (second_tag == ""):
-        second_tag = a['clanAbbrev']
-       elif (a['team'] == first_team) and (a['clanAbbrev'] != first_tag):
-        processing =3; break
-       elif (a['team'] != first_team) and (a['clanAbbrev'] == first_tag):
-        processing =5; break
-       elif (a['team'] != first_team) and (a['clanAbbrev'] != second_tag):
-        processing =4; break
-
-        
-# At this point we are sure this is a CW
-      processing =10; break
-
-# dont remember what this commented out part did, I used it during development
-# might be usefull if you are trying to write some custom filters
-     
-  #    for a in first_chunk_decoded['vehicles']:
- #       clan = first_chunk_decoded['vehicles'][a]['clanAbbrev']
- #       if (struct.unpack("i",f.read(4))[0])==2: 
-
-
-     #  print (first_chunk_decoded['gameplayType'])
-#      for a in first_chunk_decoded:
- #      print (first_chunk_decoded['gameplayType'])
-  #     print ([a])
-      
- #      second_size = struct.unpack("i",f.read(4))
-#      print (second_size[0], size, size-second_size[0]-first_size[0])
-
-#     f.seek(second_size[0],0)
-#       second_chunk = f.read(second_size[0])
-  #     second_chunk_decoded = json.loads(second_chunk.decode('utf-8'))
-       
- #      print (" number of players2 ",len(second_chunk_decoded))
- #      pprint (second_chunk_decoded)
-#     print (second_chunk.decode("utf-8"))
-
-
-
- #     for a in second_chunk_decoded[1]:
-  #     print (second_chunk_decoded[1][a]['clanAbbrev'])
-    
-
-
-# uncomment those to see what is happening with processed files
-#     print ()
-#     print (files)
-#     print (wazup[processing])
-
-     if processing==1:
-      if not os.path.exists("incomplete"):
-       os.makedirs("incomplete")
-# move or copy? too lazy to make it a command line parameter       
-#      shutil.copy(files, "incomplete/"+files)
-      shutil.move(files, "incomplete/"+files)
-      print ()
-      print ("Incomplete --> ", files)
-
-     elif processing==10:
-      if not os.path.exists("clanwars"):
-        os.makedirs("clanwars")
-      
-      if first_team != 1:
-       first_tag, second_tag = second_tag, first_tag
-      print ()
-      print ("CW between",first_tag,"and", second_tag)
-
-      d = datetime.strptime(first_chunk_decoded['dateTime'], '%d.%m.%Y %H:%M:%S')
-      d= d.strftime('%Y%m%d_%H%M')
-      
-      winlose=("Loss","Win")[second_chunk_decoded[0]['isWinner']==1]
-
-      first_tag = first_tag +"_"*(5-len(first_tag))
-      second_tag = second_tag +"_"*(5-len(second_tag))
 # You can change cw filename format here.
-      newfile = "clanwars/"+"cw"+d+"_"+first_tag+"_"+second_tag+"_"+winlose+"_"+"-".join(first_chunk_decoded['playerVehicle'].split("-")[1:])+"_"+first_chunk_decoded['mapName']+".wotreplay"
+          fileo = "cw"+date+"_"+clan_tag[0]+"_"+clan_tag[1]+"_"+winlose+"_"+"-".join(chunks[0]['playerVehicle'].split("-")[1:])+"_"+chunks[0]['mapName']+".wotreplay"
 
-# move or copy? too lazy to make it a command line parameter
-#      shutil.copy2(files, newfile)
-      shutil.move(files, newfile)
-      print ("CW --> ", newfile)
+      else:
+        if rename and (chunks_bitmask&2): #is second Json available? use it to determine win/loss
+          winlose=("Loss","Win_")[chunks[1][0]['isWinner']==1]
+          fileo = date+"_"+winlose+"_"+"-".join(chunks[0]['playerVehicle'].split("-")[1:])+"_"+chunks[0]['mapName']+".wotreplay"
+        elif rename and (chunks_bitmask&4): #is pickle available? use it to determine win/loss
+          winlose=("Loss","Win_")[chunks[2]['common']['winnerTeam']==chunks[2]['personal']['team']]
+          fileo = date+"_"+winlose+"_"+"-".join(chunks[0]['playerVehicle'].split("-")[1:])+"_"+chunks[0]['mapName']+".wotreplay"
+        else:
+          fileo = os.path.basename(files)
 
-     elif processing==11:
-      if not os.path.exists("complete"):
-       os.makedirs("complete")
-# move or copy? too lazy to make it a command line parameter
-#      shutil.copy(files, "complete/"+files)
-      shutil.move(files, "complete/"+files)
-      print ()
-      print ("Complete --> ", files)
+#      print ("\n"+files, fileo)
 
-     else:
-      print ()
-      print (files)
-      print (wazup[processing])
+      if moving:
+        shutil.move(files, output + os.path.sep + dest[dest_index] + os.path.sep + fileo)
+      else:
+        shutil.copy(files, output + os.path.sep + dest[dest_index] + os.path.sep + fileo)
+      if verbose:
+        print ("\n",dest[dest_index], " -->", fileo)
+        print (wotdecoder.status[processing])
+      break
 
 
   t2 = time.clock()
-  print ()
-  print  ("Processing "+str(len(listdir))+" files took %0.3fms"  % ((t2-t1)*1000))
 
+  print ("\nProcessed "+str(len(listdir))+" files.", errors, "errors.")
+  print  ("Took %0.3fms"  % ((t2-t1)*1000))
 
 main()
