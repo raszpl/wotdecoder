@@ -240,7 +240,7 @@ def main():
               else:
                 win_loss = ("Loss","Win ")[chunks[2]['common']['winnerTeam']==chunks[2]['vehicles'][vehicle_player_found]['team']]
               finishReason = "("+("", "extermination", "base capture", "timeout")[ chunks[2]['common']['finishReason'] ]+")"
-              print ("--- {0:4} on {1:28}{2:>40}".format(win_loss, maps[ chunks[2]['common']['arenaTypeID'] ], finishReason))
+              print ("--- {0:4} on {1:28}{2:>40}".format(win_loss, maps[ chunks[2]['common']['arenaTypeID'] & 65535 ], finishReason))
             elif chunks_bitmask&2: #is second Json available?
               finishReason = ""
               print ("--- {0:4} on {1:28}{2:15}".format(("Loss","Win ")[chunks[1][0]['isWinner']==1], chunks[0]['mapDisplayName'], finishReason))
@@ -299,7 +299,7 @@ def main():
         if battle_result: #we are decoding battle_result, lets more-or-less reconstruct potential replay name
 # its not 'pixel' accurate, im too lazy to get tank country and underscores correct.
           timestamp = datetime.fromtimestamp(chunks[2]['common']['arenaCreateTime']).strftime('%Y%m%d_%H%M')
-          print ("Belongs to~", timestamp+"_"+tank[ chunks[2]['vehicles'][vehicle_owner_found]['typeCompDescr'] ]+"_"+mapidname[ chunks[2]['common']['arenaTypeID'] ]+".wotreplay")
+          print ("Belongs to~", timestamp+"_"+tank[ chunks[2]['vehicles'][vehicle_owner_found]['typeCompDescr'] ]+"_"+mapidname[ chunks[2]['common']['arenaTypeID'] & 65535 ]+".wotreplay")
 
             
 

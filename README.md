@@ -1,8 +1,13 @@
-# wotdecoder
+## wotdecoder
 
-World Of Tanks replay and battle result parsing/decoding library written in Python 3.
+World Of Tanks replay and battle result parsing/decoding library written in Python 3.  
+List of utilities:  
+  - [wotrepparser](#wotrepparser)  - Sort replays into categories.
+  - [findplayer](#findplayer)  - Search for particular person/clan in replays/battle results.
+  - [battle_results.bat](#battle_resultsbat)  - Backup battle results every time you start the game.
 
---------------
+
+
 ## wotrepparser
 
 This program uses wotdecoder to make sense out of your replay files and sort them into five categories:
@@ -21,7 +26,7 @@ Files suitable for datamining are in complete, result and clanwar categories.
 (WoT is buggy and sometimes saves same battle_result pickle into more than one replay file.)
 
 ###Usage
------
+
 ```
 wotrepparser file_or_directory -o output_directory -v -r -n
 
@@ -33,7 +38,7 @@ wotrepparser file_or_directory -o output_directory -v -r -n
 ```
 
 ###Example
--------
+
 ```
 wotrepparser g:\World_of_Tanks\replays -o d:\replays -v -r
 ```
@@ -42,7 +47,7 @@ When executed creates 5 subdirectories (incomplete, result, complete, clanwar, e
 Next it scans g:\World_of_Tanks\replays recursively for .wotreplay files, renames and moves them accordingly.
 
 ###Performance
------------
+
 ST31000523AS HDD and 3GHz cpu gives ~25 replays per second
 ```
 Processed 4737 files. 0 errors.
@@ -58,7 +63,7 @@ Took 16117.286ms
 Verbose parameter slows it dramatically under windows console.
 
 ###Renaming convention
--------------------
+
 
 Clanwar replay file
 
@@ -89,13 +94,13 @@ Format can be easily edited further in wotrepparser.py.
 
 
 
-## findplayer
+# findplayer
 
 This program scans replay(.wotreplay) or battle_result(.dat) files for players using nickname and/or clantag.
 (Currently it stops after finding first match per replay.)
 
 ###Usage
------
+
 ```
 findplayer nickname [clantag] -c -v0..3 -e -o -r -p -b -i input_file_or_directory
 
@@ -121,7 +126,7 @@ Try `*` for string wildcard, `?` for character wildcard.
 ```
 
 ###Example stat summary output:
-----------------------------
+
 ```
 G:\World_of_Tanks\replays>python findplayer.py kawagreen -o -v4
 
@@ -142,13 +147,14 @@ Damage = 3057                          | Damage = 3536
 Spotted=  315                          | Spotted=  319
 
 Summary (average):
-Kills  =     1.11                       | Kills  =     1.11
-Damage =  1399.73                       | Damage =  1617.83
-Spotted=   486.34                       | Spotted=   380.93
+Kills  =     1.36                       | Kills  =     1.36
+Damage =  1721.92                       | Damage =  1990.21
+Spotted=   598.28                       | Spotted=   468.61
+
 
 Found 481 matches. 0 errors.
 
-Processing 4804 files took 15348.317ms
+Processing 4804 files took 115400.359ms
 ```
 
 
@@ -165,22 +171,22 @@ one session, every time you start the game it deletes old ones. This bat file wi
 and copy all .dat files it can find to .\replays\battle_results\
 
 ###Usage
------
+
 Umm, copy into your game directory and start the game with it.
 
 
 
-
-#Compatibility
 -------------
+###Compatibility
+
 Tested with replays from 7.1 up to 8.3 WoT.
 
-#Requirements
-------------
+###Requirements
+
 Python 3 http://www.python.org/
 
-#Credits
--------
+###Credits
+
 Based on  
 http://blog.wot-replays.org  
 https://github.com/Phalynx/WoT-Dossier-Cache-to-JSON  
