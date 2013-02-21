@@ -121,6 +121,8 @@ def main():
     os.makedirs("result")
   if not os.path.exists("complete"):
     os.makedirs("complete")
+  if not os.path.exists("error"):
+    os.makedirs("error")
 
   errors = 0
   for files in listdir:
