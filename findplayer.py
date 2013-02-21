@@ -252,8 +252,7 @@ def main():
 
       if chunks_bitmask&4:
         vehicle_player_found = chunks[2]['players'][player_found]['vehicleid']
-        if owner:
-          vehicle_owner_found = chunks[2]['players'][owner_found]['vehicleid']
+        vehicle_owner_found = chunks[2]['players'][owner_found]['vehicleid']
 
       if verbose >1:
             if chunks_bitmask&4: #is pickle available?
