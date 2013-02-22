@@ -60,7 +60,7 @@ def main():
   source = os.getcwd()
   output = os.getcwd()
   skip = -1
-  
+
 # Parse arguments
   for argind, arg in enumerate(sys.argv[1:]):
     if argind == skip: pass
@@ -82,7 +82,7 @@ def main():
           sys.exit("Cant create "+output)
 
     elif arg in ("-h", "-?") or arg.startswith("-") :
-                    sys.exit("wotrepparser scans replay files and sorts them into categories (incomplete, result, complete, clanwar, error)." 
+                    sys.exit("wotrepparser scans replay files and sorts them into categories (incomplete, result, complete, clanwar, error)."
                              "\nUsage:" \
                              "\n\nwotrepparser file_or_directory -o output_directory -v -r -n" \
                              "\n\n-o  Specify output directory. Default is current." \
@@ -129,16 +129,13 @@ def main():
     while True:
       chunks, chunks_bitmask, processing = wotdecoder.replay(files,7) #7 means try to decode all three blocks (binary 111)
 
-      if processing >=10: #decoder encountered an error
+      if processing >=6: #decoder encountered an error
         dest_index = 5
         errors += 1
       else:
         date = datetime.strptime(chunks[0]['dateTime'], '%d.%m.%Y %H:%M:%S').strftime('%Y%m%d_%H%M')
         dest = ["incomplete", "result", "complete", "complete", "clanwar", "error"]
         dest_index = processing-1
-      
-      if processing == 9: #mangled replay, but still have some useful data, lets treat it like Incomplete
-        dest_index = 0
 
       if (processing == 3 and (len(chunks[0]['vehicles'])!=len(chunks[1][1]))) or \
          (processing == 4 and chunks[2]['common']['bonusType'] == 5): #cw

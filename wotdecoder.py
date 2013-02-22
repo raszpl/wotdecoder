@@ -570,61 +570,61 @@ class _Decoder:
 
 
 #1-8 are legit. 9 error, but still has data. >=10 error
-status = {
-              1: 'Incomplete.',
-              2: 'Incomplete (past 8.1), with \'Battle Result\' pickle.',
-              3: 'Complete (pre 8.1).',
-              4: 'Complete (past 8.1).',
-              6: 'Bugged (past 8.1). Game crashed somewhere, second Json has game score',
-              8: 'Bugged (past 8.1). Only first Json available, pickle from wrong replay',
-              10: 'File too small to be a valid replay.',
-              11: 'Invalid Magic number. This is not a wotreplay file.',
-              12: 'Broken replay file, most likely game crashed while recording. It still has some (maybe valid) battle result data.',
-              13: 'Broken replay file, cant recognize first block.',
-              14: 'Broken replay file, cant recognize second block.',
-              15: 'Broken replay file, cant recognize third block.',
-              16: 'No compatible blocks found, can only process blocks 1-3',
-              20: 'Something went wrong!'
-         }
-maps   = {
-              1:    ('01_karelia','Karelia'),
-              2:    ('02_malinovka','Malinovka'),
-              3:    ('04_himmelsdorf','Himmelsdorf'),
-              4:    ('05_prohorovka','Prokhorovka'),
-              5:    ('07_lakeville','Lakeville'),
-              6:    ('06_ensk','Ensk'),
-              7:    ('11_murovanka','Murovanka'),
-              8:    ('13_erlenberg','Erlenberg'),
-              9:    ('10_hills','Mines'),
-              10:   ('15_komarin','Komarin'),
-              11:   ('18_cliff','Cliff'),
-              12:   ('19_monastery','Abbey'),
-              13:   ('28_desert','Sand River'),
-              14:   ('35_steppes','Steppes'),
-              15:   ('37_caucasus','Mountain Pass'),
-              16:   ('33_fjord','Fjords'),
-              17:   ('34_redshire','Redshire'),
-              18:   ('36_fishing_bay','Fisherman\'s Bay'),
-              19:   ('38_mannerheim_line','Arctic Region'),
-              20:   ('08_ruinberg','Ruinberg'),
-              21:   ('14_siegfried_line','Siegfried Line'),
-              22:   ('22_slough','Swamp'),
-              23:   ('23_westfeld','Westfield'),
-              24:   ('29_el_hallouf','El Halluf'),
-              26:   ('31_airfield','Airfield'),
-              27:   ('03_campania','Province'),
-              28:   ('17_munchen','Widepark'),
-              31:   ('44_north_america','Live Oaks'),
-              32:   ('39_crimea','Highway'),
-              34:   ('45_north_america','South Coast'),
-              36:   ('42_north_america','Port'),
-              44:   ('51_asia','Dragon Ridge'),
-              49:   ('47_canada_a','Serene Coast'),
-              2021: ('00_tank_tutorial','Training area')
-         }
-mode   = ["ctf", "domination", "assault"]
-
-
+status =       {
+                 1: 'Incomplete.',
+                 2: 'Incomplete (past 8.1), with \'Battle Result\' pickle.',
+                 3: 'Complete (pre 8.1).',
+                 4: 'Complete (past 8.1).',
+                 6: 'Bugged (past 8.1). Game crashed somewhere, second Json has game score',
+                 8: 'Bugged (past 8.1). Only first Json available, pickle from wrong replay',
+                 10: 'File too small to be a valid replay.',
+                 11: 'Invalid Magic number. This is not a wotreplay file.',
+                 12: 'Broken replay file, most likely game crashed while recording. It still has some (maybe valid) battle result data.',
+                 13: 'Broken replay file, cant recognize first block.',
+                 14: 'Broken replay file, cant recognize second block.',
+                 15: 'Broken replay file, cant recognize third block.',
+                 16: 'No compatible blocks found, can only process blocks 1-3',
+                 20: 'Something went wrong!'
+                }
+maps          = {
+                 1:    ('01_karelia','Karelia'),
+                 2:    ('02_malinovka','Malinovka'),
+                 3:    ('04_himmelsdorf','Himmelsdorf'),
+                 4:    ('05_prohorovka','Prokhorovka'),
+                 5:    ('07_lakeville','Lakeville'),
+                 6:    ('06_ensk','Ensk'),
+                 7:    ('11_murovanka','Murovanka'),
+                 8:    ('13_erlenberg','Erlenberg'),
+                 9:    ('10_hills','Mines'),
+                 10:   ('15_komarin','Komarin'),
+                 11:   ('18_cliff','Cliff'),
+                 12:   ('19_monastery','Abbey'),
+                 13:   ('28_desert','Sand River'),
+                 14:   ('35_steppes','Steppes'),
+                 15:   ('37_caucasus','Mountain Pass'),
+                 16:   ('33_fjord','Fjords'),
+                 17:   ('34_redshire','Redshire'),
+                 18:   ('36_fishing_bay','Fisherman\'s Bay'),
+                 19:   ('38_mannerheim_line','Arctic Region'),
+                 20:   ('08_ruinberg','Ruinberg'),
+                 21:   ('14_siegfried_line','Siegfried Line'),
+                 22:   ('22_slough','Swamp'),
+                 23:   ('23_westfeld','Westfield'),
+                 24:   ('29_el_hallouf','El Halluf'),
+                 26:   ('31_airfield','Airfield'),
+                 27:   ('03_campania','Province'),
+                 28:   ('17_munchen','Widepark'),
+                 31:   ('44_north_america','Live Oaks'),
+                 32:   ('39_crimea','Highway'),
+                 34:   ('45_north_america','South Coast'),
+                 36:   ('42_north_america','Port'),
+                 44:   ('51_asia','Dragon Ridge'),
+                 49:   ('47_canada_a','Serene Coast'),
+                 2021: ('00_tank_tutorial','Training area')
+                }
+gameplayid    = ["ctf", "domination", "assault"]
+finishreason  = ["", "extermination", "base capture", "timeout"]
+bonustype     = ["", "public", "training", "tankcompany", "", "clanwar"]
 
 def replay(filename, to_decode):
 # filename= name of .wotreplay file
@@ -753,7 +753,7 @@ def replay(filename, to_decode):
 # lets check if pickle belongs to this replay
 # this is weak check, we only compare map and game mode, It can still pass some corrupted ones
     if maps[ third_chunk_decoded['common']['arenaTypeID'] & 65535 ][0] !=first_chunk_decoded['mapName'] or \
-       mode[ third_chunk_decoded['common']['arenaTypeID'] >>16] != first_chunk_decoded['gameplayID']:
+       gameplayid[ third_chunk_decoded['common']['arenaTypeID'] >>16] != first_chunk_decoded['gameplayID']:
 #      print("EERRRROOOORRRrrrrrr!!!one77")
 #      print("json:  ", first_chunk_decoded['mapName'])
 #      print("pickle:", maps[ third_chunk_decoded['common']['arenaTypeID'] & 65535 ][0])
@@ -803,7 +803,7 @@ def battle_result(filename):
   common_decoded["duration"]= common_to_decode[4]
   common_decoded["bonusType"]= common_to_decode[5]
   common_decoded["vehLockMode"]= common_to_decode[6]
-  common_decoded["gameplayID"]= common_to_decode[0] >>16
+  common_decoded["gameplayID"]= common_to_decode[0] >>16 #this doesnt exist in replays, only in battle_result, safer to always use (arenaTypeID >>16)
 
 #  common_decoded["guiType"]= common_to_decode[7] #? maybe?
 
