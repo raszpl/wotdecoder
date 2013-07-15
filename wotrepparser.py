@@ -49,6 +49,19 @@ def custom_listfiles(path, extension, recursive, skip = None):
     files = [os.path.join(path, f) for f in os.listdir(path) if os.path.isfile(path + os.path.sep + f) and f.endswith("."+extension) and f!=skip]
   return files
 
+def getkeyboard(filename):
+  while True:
+    choice = input("\n"+filename+ "  already exists, overwrite? (Yes/No/All)")
+    if choice == 'n' or choice == 'N':
+      choice = 0
+      break
+    elif choice == 'y' or choice == 'Y':
+      choice = 1
+      break
+    elif choice == 'a' or choice == 'A':
+      choice = 2
+      break
+  return choice
 
 
 def main():
@@ -56,7 +69,10 @@ def main():
   verbose = False
   recursive = False
   rename = True
-  moving = True
+  dry = False
+  mode = 0
+  b_r = 0
+  overwrite = False
   source = os.getcwd()
   output = os.getcwd()
   skip = -1
@@ -67,7 +83,12 @@ def main():
     elif arg == "-v" : verbose = True
     elif arg == "-r" : recursive = True
     elif arg == "-n" : rename = False
-    elif arg == "-c" : moving = False
+    elif arg == "-b" : b_r = 1
+    elif arg == "-b1" : b_r = 2
+    elif arg == "-b2" : b_r = 3
+    elif arg == "-f" : overwrite = True
+    elif arg == "-c" : mode = 1
+    elif arg == "-c0" : mode = 2
     elif arg == "-o" :
       if len(sys.argv) <= argind+2:
         sys.exit("\nUnspecified Output directory.")
@@ -89,7 +110,13 @@ def main():
                              "\n-v  Verbose, display every file processed." \
                              "\n-r  Recursive scan of all subdirectories." \
                              "\n-n  Dont rename files." \
-                             "\n-c  Copy instead of moving.")
+                             "\n-b  Dump raw battle_results pickle to output_directory\\b_r\\number.pickle" \
+                             "\n-b1 Decode battle_results pickle, save output_directory\\b_r\\number.json" \
+                             "\n-b2 Same as above, but human readable json." \
+                             "\n-f  Force overwrite. Default is ask." \
+                             "\n-c  Copy instead of moving." \
+                             "\n-c0 Dry run, dont copy, dont move.")
+
     elif source == os.getcwd():
       if not os.path.exists(arg):
         sys.exit("\n"+arg+" doesnt exist.")
@@ -98,7 +125,10 @@ def main():
 
   print ("\nSource:", source)
   print ("Output:", output)
-  print ("Moving:", moving, "Rename:", rename, "Verbose:", verbose, "Recursive:", recursive, "\n")
+  print ("Mode  :", ("move","copy","dry run")[mode]+",",("dont rename","rename")[rename]+("",", verbose")[verbose]+("",", recursive dir scan")[recursive]+ \
+         ("",", raw battle_results pickle",", decoded battle_results json",", decoded human readable battle_results json")[b_r]+".\n")
+
+
 
 
   t1 = time.clock()
@@ -123,30 +153,31 @@ def main():
     os.makedirs(output + os.path.sep + "complete")
   if not os.path.exists(output + os.path.sep + "error"):
     os.makedirs(output + os.path.sep + "error")
+  if b_r>0 and (not os.path.exists(output + os.path.sep + "b_r")):
+    os.makedirs(output + os.path.sep + "b_r")
 
   errors = 0
+  dest = ["incomplete", "result", "complete", "complete", "clanwar", "error"]
+  stats = [0, 0, 0, 0, 0, 0]
+
   for files in listdir:
     while True:
+#      print ("\n"+files)
+      fileo = os.path.basename(files)
+
       chunks, chunks_bitmask, processing = wotdecoder.replay(files,7) #7 means try to decode all three blocks (binary 111)
 
-      if processing >=6: #decoder encountered an error
-        dest_index = 5
-        errors += 1
-      else:
-        date = datetime.strptime(chunks[0]['dateTime'], '%d.%m.%Y %H:%M:%S').strftime('%Y%m%d_%H%M')
-        dest = ["incomplete", "result", "complete", "complete", "clanwar", "error"]
-        dest_index = processing-1
-
-      if (processing == 3 and (len(chunks[0]['vehicles'])!=len(chunks[1][1]))) or \
-         (processing == 4 and chunks[2]['common']['bonusType'] == 5): #cw
-
-        clan_tag = ["", ""]
+      if processing == 3 and (len(chunks[0]['vehicles'])!=len(chunks[1][1])) or \
+         processing == 4 and chunks[2]['common']['bonusType'] == 5: #fogofwar = cw, bonusType = 5 = cw
         dest_index = 4
+        stats[dest_index] += 1
         if rename:
+          date = datetime.strptime(chunks[0]['dateTime'], '%d.%m.%Y %H:%M:%S').strftime('%Y%m%d_%H%M')
+          clan_tag = ["", ""]
           for playind, player in enumerate(chunks[1][1]):
             if playind == 0:
               first_tag = chunks[1][1][player]['clanAbbrev']
-              clan_tag[chunks[1][1][player]['team'] - 1] = chunks[1][1][player]['clanAbbrev']
+              clan_tag[chunks[1][1][player]['team'] - 1] = first_tag
             elif first_tag != chunks[1][1][player]['clanAbbrev']:
               clan_tag[chunks[1][1][player]['team'] - 1] = chunks[1][1][player]['clanAbbrev']
               break
@@ -159,31 +190,121 @@ def main():
 # You can change cw filename format here.
           fileo = "cw"+date+"_"+clan_tag[0]+"_"+clan_tag[1]+"_"+winlose+"_"+"-".join(chunks[0]['playerVehicle'].split("-")[1:])+"_"+chunks[0]['mapName']+".wotreplay"
 
-      else:
-        if rename and (chunks_bitmask&2): #is second Json available? use it to determine win/loss
+      elif processing <6 and chunks_bitmask&2: #is second Json available? use it to determine win/loss
+        dest_index = processing-1
+        stats[dest_index] += 1
+        if rename:
+          date = datetime.strptime(chunks[0]['dateTime'], '%d.%m.%Y %H:%M:%S').strftime('%Y%m%d_%H%M')
           winlose=("Loss","Win_")[chunks[1][0]['isWinner']==1]
           fileo = date+"_"+winlose+"_"+"-".join(chunks[0]['playerVehicle'].split("-")[1:])+"_"+chunks[0]['mapName']+".wotreplay"
-        elif rename and (chunks_bitmask&4): #is pickle available? use it to determine win/loss
-          winlose=("Loss","Win_")[chunks[2]['common']['winnerTeam']==chunks[2]['personal']['team']]
+      elif processing <6 and chunks_bitmask&4: #is pickle available? use it to determine win/loss
+        dest_index = processing-1
+        stats[dest_index] += 1
+        if rename:
+          date = datetime.strptime(chunks[0]['dateTime'], '%d.%m.%Y %H:%M:%S').strftime('%Y%m%d_%H%M')
+          winlose=("Loss","Win_")[chunks[2]['common']['winnerTeam'] == chunks[2]['personal']['team']]
+          fileo = date+"_"+winlose+"_"+wotdecoder.tank[chunks[2]['personal']['typeCompDescr']]+"_"+wotdecoder.maps[chunks[2]['common']['arenaTypeID'] & 65535]+".wotreplay"
+      elif processing ==6: #bugged, but has valid score and can be renamed
+        dest_index = 5
+        stats[dest_index] += 1
+        if rename:
+          date = datetime.strptime(chunks[0]['dateTime'], '%d.%m.%Y %H:%M:%S').strftime('%Y%m%d_%H%M')
+          winlose=("Loss","Win_")[chunks[1][0]['isWinner']==1]
           fileo = date+"_"+winlose+"_"+"-".join(chunks[0]['playerVehicle'].split("-")[1:])+"_"+chunks[0]['mapName']+".wotreplay"
-        else:
-          fileo = os.path.basename(files)
+      elif processing ==8: #bugged, but has valid pickle, can be renamed and moved to result
+        dest_index = 1
+        stats[dest_index] += 1
+        if rename:
+          date = datetime.strptime(chunks[0]['dateTime'], '%d.%m.%Y %H:%M:%S').strftime('%Y%m%d_%H%M')
+          winlose=("Loss","Win_")[chunks[2]['common']['winnerTeam'] == chunks[2]['personal']['team']]
+          fileo = date+"_"+winlose+"_"+wotdecoder.tank[chunks[2]['personal']['typeCompDescr']]+"_"+wotdecoder.maps[chunks[2]['common']['arenaTypeID'] & 65535]+".wotreplay"
+      elif processing ==1: #incomplete
+        dest_index = processing-1
+        stats[dest_index] += 1
+      elif processing >6: #bugged, cant be renamed
+        dest_index = 5
+        stats[dest_index] += 1
 
-#      print ("\n"+files, fileo)
+      fileo = output + os.path.sep + dest[dest_index] + os.path.sep + fileo
+      exists = os.path.isfile(fileo)
+      ask = 0
+      if not overwrite and exists:
+        ask = getkeyboard(fileo)
+        if ask == 2: overwrite = True
+      else: ask = 1
 
-      if moving:
-        shutil.move(files, output + os.path.sep + dest[dest_index] + os.path.sep + fileo)
-      else:
-        shutil.copy(files, output + os.path.sep + dest[dest_index] + os.path.sep + fileo)
+      if mode == 0 and ask>0:
+          shutil.move(files, fileo)
+
+      elif mode == 1 and ask>0:
+          shutil.copy(files, fileo)
+
+      fileb_r = ""
+      if b_r >0 and chunks_bitmask&4:
+        fileb_r = output + os.path.sep + "b_r" + os.path.sep + str(chunks[2]['arenaUniqueID']) +("",".pickle",".json",".json")[b_r]
+        exists = os.path.isfile(fileb_r)
+        ask = 0
+        if not overwrite and exists:
+          ask = getkeyboard(fileb_r)
+          if ask == 2: overwrite = True
+        else: ask = 1
+
+        if b_r == 1 and ask>0:
+          try:
+            fo = open(fileb_r,"wb")
+            f = open(files, "rb")
+            f.seek(8)
+            seek_size = struct.unpack("i",f.read(4))[0]
+            f.seek(seek_size,1)
+            if chunks_bitmask&2: #replay with Pickle can have 2 or 3 blocks, we are only interested in the last one and need to skip others
+              seek_size = struct.unpack("i",f.read(4))[0]
+              f.seek(seek_size,1)
+            third_size = struct.unpack("i",f.read(4))[0]
+            third_chunk = f.read(third_size)
+            f.close()
+          except:
+            raise
+          else:
+            fo.write(third_chunk)
+            fo.close()
+
+        elif b_r == 2 and ask>0:
+          try:
+            fo = open(fileb_r,"w")
+          except:
+            raise
+          else:
+            json.dump(chunks[2],fo)
+            fo.close()
+
+        elif b_r == 3 and ask>0:
+          try:
+            fo = open(fileb_r,"w")
+          except:
+            raise
+          else:
+            json.dump(chunks[2], fo, sort_keys=True, indent=4)
+            fo.close()
+
       if verbose:
-        print ("\n",dest[dest_index], " -->", fileo)
-        print (wotdecoder.status[processing])
+        print ("\n"+files)
+        print ("", dest[dest_index], " | ", wotdecoder.status[processing])
+        print (fileo)
+        print (fileb_r)
       break
 
 
   t2 = time.clock()
 
-  print ("\nProcessed "+str(len(listdir))+" files.", errors, "errors.")
+
+  print ("\n{0:10} {1:>5}".format("Processed", str(len(listdir))))
+
+  del dest[2]
+  stats[2] += stats[3]
+  del stats[3]
+  for x in range(0, len(dest)):
+    print ("{0:10} {1:>5}".format(dest[x], stats[x]))
+
   print  ("Took %0.3fms"  % ((t2-t1)*1000))
 
 main()
