@@ -196,11 +196,7 @@ class _Unpickler:
     dispatch[INT]= load_int
 
     def load_binint(self):
-        bla = self.read(4)
-        dest = bytearray(4)
-        for deind, val in enumerate(bla):
-          dest[deind]= val
-        self.append((dest[3]<< 24)+(dest[2]<< 16)+(dest[1]<< 8)+dest[0])
+        self.append(struct.unpack('<i', self.read(4))[0])
     dispatch[BININT]= load_binint
 
     def load_binint1(self):
@@ -208,11 +204,7 @@ class _Unpickler:
     dispatch[BININT1]= load_binint1
 
     def load_binint2(self):
-        bla = self.read(2)
-        dest = bytearray(2)
-        for deind, val in enumerate(bla):
-          dest[deind]= val
-        self.append((dest[1]<< 8)+dest[0])
+        self.append(struct.unpack('<i', self.read(2) + b'\000\000')[0])
     dispatch[BININT2]= load_binint2
 
     def load_long(self):
@@ -505,7 +497,6 @@ class _EmptyClass:
     pass
 
 
-
 class _Decoder:
 
     def decode_details(data):
@@ -523,53 +514,209 @@ class _Decoder:
       details = {}
 
       binlen = len(data) // 22
+#      print (len(data))
       for x in range(0, binlen):
         offset = 4*binlen + x*18
-        vehic = struct.unpack('i', data[x*4:x*4+4].encode('raw_unicode_escape'))[0]
-        detail_values = struct.unpack('hhhhhhhhh', data[offset:offset+18].encode('raw_unicode_escape'))
-        details[vehic]= dict(zip(detail, detail_values))
+        vehic = struct.unpack('i', data[x*4:x*4+4])[0]
+        detail_values = struct.unpack('hhhhhhhhh', data[offset:offset+18])
+        details[str(vehic)]= dict(zip(detail, detail_values))
+#        pprint (data[offset:offset+18].encode('raw_unicode_escape'))
       return details
 
     def decode_vehicle(data):
+#      print(len(data))
+#      print(data)
+
       vehicle = {}
-      vehicle["health"]= data[0]
-      vehicle["credits"]= data[1]
-      vehicle["xp"]= data[2]
-      vehicle["shots"]= data[3]
-      vehicle["hits"]= data[4]
-      vehicle["he_hits"]= data[5]
-      vehicle["pierced"]= data[6]
-      vehicle["damageDealt"]= data[7]
-      vehicle["damageAssisted"]= data[8]
-      vehicle["damageReceived"]= data[9]
-      vehicle["shotsReceived"]= data[10]
-      vehicle["spotted"]= data[11]
-      vehicle["damaged"]= data[12]
-      vehicle["kills"]= data[13]
-      vehicle["tdamageDealt"]= data[14]
-      vehicle["tkills"]= data[15]
-      vehicle["isTeamKiller"]= data[16]
-      vehicle["capturePoints"]= data[17]
-      vehicle["droppedCapturePoints"]= data[18]
-      vehicle["mileage"]= data[19]
-      vehicle["lifeTime"]= data[20]
-      vehicle["killerID"]= data[21]
-      vehicle["achievements"]= data[22]
-      vehicle["repair"]= data[23]
-      vehicle["freeXP"]= data[24]
-      vehicle["details"]= _Decoder.decode_details(data[25].decode('unicode_escape'))
-      vehicle["accountDBID"]= data[26]
-      vehicle["team"]= data[27]
-      vehicle["typeCompDescr"]= data[28]
-      vehicle["gold"]= data[29]
+      if len(data) == 30: # 30 = up to 8.3
+        vehicle["health"]= data[0]
+        vehicle["credits"]= data[1]
+        vehicle["xp"]= data[2]
+        vehicle["shots"]= data[3]
+        vehicle["hits"]= data[4]
+        vehicle["he_hits"]= data[5]
+        vehicle["pierced"]= data[6]
+        vehicle["damageDealt"]= data[7]
+        vehicle["damageAssisted"]= data[8]
+        vehicle["damageReceived"]= data[9]
+        vehicle["shotsReceived"]= data[10]
+        vehicle["spotted"]= data[11]
+        vehicle["damaged"]= data[12]
+        vehicle["kills"]= data[13]
+        vehicle["tdamageDealt"]= data[14]
+        vehicle["tkills"]= data[15]
+        vehicle["isTeamKiller"]= data[16]
+        vehicle["capturePoints"]= data[17]
+        vehicle["droppedCapturePoints"]= data[18]
+        vehicle["mileage"]= data[19]
+        vehicle["lifeTime"]= data[20]
+        vehicle["killerID"]= data[21]
+        vehicle["achievements"]= data[22]
+        vehicle["repair"]= data[23]
+        vehicle["freeXP"]= data[24]
+        vehicle["details"]= _Decoder.decode_details(data[25])
+        vehicle["accountDBID"]= data[26]
+        vehicle["team"]= data[27]
+        vehicle["typeCompDescr"]= data[28]
+        vehicle["gold"]= data[29]
+
+      elif len(data) == 32: # 32 = 8.4
+        vehicle["health"]= data[0]
+        vehicle["credits"]= data[1]
+        vehicle["xp"]= data[2]
+        vehicle["shots"]= data[3]
+        vehicle["hits"]= data[4]
+        vehicle["thits"]= data[5]
+        vehicle["he_hits"]= data[6]
+        vehicle["pierced"]= data[7]
+        vehicle["damageDealt"]= data[8]
+        vehicle["damageAssisted"]= data[9]
+        vehicle["damageReceived"]= data[10]
+        vehicle["shotsReceived"]= data[11]
+        vehicle["spotted"]= data[12]
+        vehicle["damaged"]= data[13]
+        vehicle["kills"]= data[14]
+        vehicle["tdamageDealt"]= data[15]
+        vehicle["tkills"]= data[16]
+        vehicle["isTeamKiller"]= data[17]
+        vehicle["capturePoints"]= data[18]
+        vehicle["droppedCapturePoints"]= data[19]
+        vehicle["mileage"]= data[20]
+        vehicle["lifeTime"]= data[21]
+        vehicle["killerID"]= data[22]
+        vehicle["achievements"]= data[23]
+        vehicle["potentialDamageReceived"]= data[24]
+        vehicle["repair"]= data[25]
+        vehicle["freeXP"]= data[26]
+        vehicle["details"]= _Decoder.decode_details(data[27])
+        vehicle["accountDBID"]= data[28]
+        vehicle["team"]= data[29]
+        vehicle["typeCompDescr"]= data[30]
+        vehicle["gold"]= data[31]
+
+      elif len(data) == 50: # 50 = up to 8.3
+        vehicle["health"]= data[0]
+        vehicle["credits"]= data[1]
+        vehicle["xp"]= data[2]
+        vehicle["shots"]= data[3]
+        vehicle["hits"]= data[4]
+        vehicle["he_hits"]= data[5]
+        vehicle["pierced"]= data[6]
+        vehicle["damageDealt"]= data[7]
+        vehicle["damageAssisted"]= data[8]
+        vehicle["damageReceived"]= data[9]
+        vehicle["shotsReceived"]= data[10]
+        vehicle["spotted"]= data[11]
+        vehicle["damaged"]= data[12]
+        vehicle["kills"]= data[13]
+        vehicle["tdamageDealt"]= data[14]
+        vehicle["tkills"]= data[15]
+        vehicle["isTeamKiller"]= data[16]
+        vehicle["capturePoints"]= data[17]
+        vehicle["droppedCapturePoints"]= data[18]
+        vehicle["mileage"]= data[19]
+        vehicle["lifeTime"]= data[20]
+        vehicle["killerID"]= data[21]
+        vehicle["achievements"]= data[22]
+        vehicle["repair"]= data[23]
+        vehicle["freeXP"]= data[24]
+        vehicle["details"]= _Decoder.decode_details(data[25])
+        vehicle["accountDBID"]= data[26]
+        vehicle["team"]= data[27]
+        vehicle["typeCompDescr"]= data[28]
+        vehicle["gold"]= data[29]
+
+      elif len(data) == 52: # 52 = 8.4
+        vehicle["health"]= data[0]
+        vehicle["credits"]= data[1]
+        vehicle["xp"]= data[2]
+        vehicle["shots"]= data[3]
+        vehicle["hits"]= data[4]
+        vehicle["thits"]= data[5]
+        vehicle["he_hits"]= data[6]
+        vehicle["pierced"]= data[7]
+        vehicle["damageDealt"]= data[8]
+        vehicle["damageAssisted"]= data[9]
+        vehicle["damageReceived"]= data[10]
+        vehicle["shotsReceived"]= data[11]
+        vehicle["spotted"]= data[12]
+        vehicle["damaged"]= data[13]
+        vehicle["kills"]= data[14]
+        vehicle["tdamageDealt"]= data[15]
+        vehicle["tkills"]= data[16]
+        vehicle["isTeamKiller"]= data[17]
+        vehicle["capturePoints"]= data[18]
+        vehicle["droppedCapturePoints"]= data[19]
+        vehicle["mileage"]= data[20]
+        vehicle["lifeTime"]= data[21]
+        vehicle["killerID"]= data[22]
+        vehicle["achievements"]= data[23]
+        vehicle["potentialDamageReceived"]= data[24]
+        vehicle["repair"]= data[25]
+        vehicle["freeXP"]= data[26]
+        vehicle["details"]= _Decoder.decode_details(data[27])
+        vehicle["accountDBID"]= data[28]
+        vehicle["team"]= data[29]
+        vehicle["typeCompDescr"]= data[30]
+        vehicle["gold"]= data[31]
+        vehicle["xpPenalty"]= data[32]
+        vehicle["creditsPenalty"]= data[33]
+        vehicle["creditsContributionIn"]= data[34]
+        vehicle["creditsContributionOut"]= data[35]
+        vehicle["tmenXP"]= data[36]
+        vehicle["eventCredits"]= data[37]
+        vehicle["eventFreeXP"]= data[38]
+        vehicle["eventXP"]= data[39]
+        vehicle["eventGold"]= data[40]
+        vehicle["eventTMenXP"]= data[41]
+        vehicle["autoRepairCost"]= data[42]
+        vehicle["autoLoadCost"]= list(data[43])
+        vehicle["autoEquipCost"]= list(data[44])
+        vehicle["isPremium"]= data[45]
+        vehicle["premiumCreditsFactor10"]= data[46]
+        vehicle["premiumXPFactor10"]= data[47]
+        vehicle["dailyXPFactor10"]= data[48]
+        vehicle["aogasFactor10"]= data[49]
+        vehicle["markOfMastery"]= data[50]
+        if len(data[51]) >0:
+          vehicle["dossierPopUps"]= [list(item) for item in data[51]]
+        else:
+          vehicle["dossierPopUps"]= data[51]
+      else: raise ValueError("Dont know this format.")
+
+#        pprint (data)
+
+#      pprint (vehicle)
       return vehicle
 #    vehicle["achievementlist"]=
 #    vehicle["countryID"]= #look up tanks.json
 #    vehicle["tankID"]= data[28] >>8 #8 upper bits of typeCompDescr
-#    vehicle["tankName"]= #look up tanks.json
+#    vehicle["tankName"]= tank[typeCompDescr]
 
 
-#1-8 are legit. 9 error, but still has data. >=10 error
+try:
+  f = open("tanks.json", "r")
+  tanks = json.load(f)
+except Exception:
+  raise
+else:
+  f.close()
+  tank = {}
+  for ta in tanks:
+    tank [ (ta['tankid']<<8) + (ta['countryid']<<4) + 1 ] = ta['icon_orig']
+
+try:
+  f = open("maps.json", "r")
+  mapss = json.load(f)
+except Exception:
+  raise
+else:
+  f.close()
+  maps = {}
+  for ma in mapss:
+    maps [ ma['mapid'] ] = ma['mapidname']
+
+#1-4 are legit. 6-8 error, but still has some useful data. >=10 error
 status =       {
                  1: 'Incomplete.',
                  2: 'Incomplete (past 8.1), with \'Battle Result\' pickle.',
@@ -578,7 +725,7 @@ status =       {
                  6: 'Bugged (past 8.1). Game crashed somewhere, second Json has game score',
                  8: 'Bugged (past 8.1). Only first Json available, pickle from wrong replay',
                  10: 'File too small to be a valid replay.',
-                 11: 'Invalid Magic number. This is not a wotreplay file.',
+                 11: 'Invalid Magic number. This is not a valid wotreplay file.',
                  12: 'Broken replay file, most likely game crashed while recording. It still has some (maybe valid) battle result data.',
                  13: 'Broken replay file, cant recognize first block.',
                  14: 'Broken replay file, cant recognize second block.',
@@ -586,43 +733,7 @@ status =       {
                  16: 'No compatible blocks found, can only process blocks 1-3',
                  20: 'Something went wrong!'
                 }
-maps          = {
-                 1:    ('01_karelia','Karelia'),
-                 2:    ('02_malinovka','Malinovka'),
-                 3:    ('04_himmelsdorf','Himmelsdorf'),
-                 4:    ('05_prohorovka','Prokhorovka'),
-                 5:    ('07_lakeville','Lakeville'),
-                 6:    ('06_ensk','Ensk'),
-                 7:    ('11_murovanka','Murovanka'),
-                 8:    ('13_erlenberg','Erlenberg'),
-                 9:    ('10_hills','Mines'),
-                 10:   ('15_komarin','Komarin'),
-                 11:   ('18_cliff','Cliff'),
-                 12:   ('19_monastery','Abbey'),
-                 13:   ('28_desert','Sand River'),
-                 14:   ('35_steppes','Steppes'),
-                 15:   ('37_caucasus','Mountain Pass'),
-                 16:   ('33_fjord','Fjords'),
-                 17:   ('34_redshire','Redshire'),
-                 18:   ('36_fishing_bay','Fisherman\'s Bay'),
-                 19:   ('38_mannerheim_line','Arctic Region'),
-                 20:   ('08_ruinberg','Ruinberg'),
-                 21:   ('14_siegfried_line','Siegfried Line'),
-                 22:   ('22_slough','Swamp'),
-                 23:   ('23_westfeld','Westfield'),
-                 24:   ('29_el_hallouf','El Halluf'),
-                 26:   ('31_airfield','Airfield'),
-                 27:   ('03_campania','Province'),
-                 28:   ('17_munchen','Widepark'),
-                 31:   ('44_north_america','Live Oaks'),
-                 32:   ('39_crimea','Highway'),
-                 34:   ('45_north_america','South Coast'),
-                 36:   ('42_north_america','Port'),
-                 44:   ('51_asia','Dragon Ridge'),
-                 49:   ('47_canada_a','Serene Coast'),
-                 2021: ('00_tank_tutorial','Training area')
-                }
-gameplayid    = ["ctf", "domination", "assault"]
+gameplayid    = ["ctf", "encounter", "assault"]
 finishreason  = ["", "extermination", "base capture", "timeout"]
 bonustype     = ["", "public", "training", "tankcompany", "", "clanwar"]
 
@@ -632,13 +743,13 @@ def replay(filename, to_decode):
 # We do not just count blocks as they are in replay files. Instead we always decode
 # Bit 0 = first Json block, starting player list
 # Bit 1 = second Json block, simplified frag count
-# Bit 2 = pickle, proper battle result with damage numers
+# Bit 2 = pickle, proper battle result with damage numbers
 # 7(binary 111) means decode all three. 5(binary 101) means decode first Json and pikle.
 #
 # returns decoded_chunks[0:3], chunks bitmask, decoder status
 
   while True:
-    wot_replay_magic_number = 288633362
+    wot_replay_magic_number = "12323411"
     blocks = 0
     first_chunk_decoded = {}
     second_chunk_decoded = {}
@@ -647,7 +758,7 @@ def replay(filename, to_decode):
     filesize = os.path.getsize(filename)
     if filesize<12: processing =10; break
     f = open(filename, "rb")
-    if struct.unpack("i",f.read(4))[0]!=wot_replay_magic_number: processing =11; break
+    if f.read(4)!=bytes.fromhex(wot_replay_magic_number): processing =11; break  
     blocks = struct.unpack("i",f.read(4))[0]
 
 # 8.1 Adds new unencrypted Python pickle block containing your match stats
@@ -707,7 +818,7 @@ def replay(filename, to_decode):
           third_chunk_decoded = _Unpickler(io.BytesIO(second_chunk)).load()
           chunks_bitmask = chunks_bitmask|4
           for b in third_chunk_decoded['vehicles']:
-            third_chunk_decoded['vehicles'][b]['details']= _Decoder.decode_details(third_chunk_decoded['vehicles'][b]['details'])
+            third_chunk_decoded['vehicles'][b]['details']= _Decoder.decode_details(third_chunk_decoded['vehicles'][b]['details'].encode('raw_unicode_escape'))
             third_chunk_decoded['players'][ third_chunk_decoded['vehicles'][b]['accountDBID'] ]["vehicleid"]=b
         processing =2; break
       elif second_chunk[0:2] == b'[{':
@@ -736,7 +847,7 @@ def replay(filename, to_decode):
             third_chunk_decoded = _Unpickler(io.BytesIO(third_chunk)).load()
             chunks_bitmask = chunks_bitmask|4
             for b in third_chunk_decoded['vehicles']:
-              third_chunk_decoded['vehicles'][b]['details']= _Decoder.decode_details(third_chunk_decoded['vehicles'][b]['details'])
+              third_chunk_decoded['vehicles'][b]['details']= _Decoder.decode_details(third_chunk_decoded['vehicles'][b]['details'].encode('raw_unicode_escape'))
               third_chunk_decoded['players'][ third_chunk_decoded['vehicles'][b]['accountDBID'] ]["vehicleid"]=b
           processing =4; break
         else: processing =15; break
@@ -749,26 +860,25 @@ def replay(filename, to_decode):
 
   f.close()
 
-  if chunks_bitmask&4 and chunks_bitmask&1:
+  if chunks_bitmask&5 ==5:
 # lets check if pickle belongs to this replay
 # this is weak check, we only compare map and game mode, It can still pass some corrupted ones
-    if maps[ third_chunk_decoded['common']['arenaTypeID'] & 65535 ][0] !=first_chunk_decoded['mapName'] or \
+    if maps[ third_chunk_decoded['common']['arenaTypeID'] & 65535 ] !=first_chunk_decoded['mapName'] or \
        gameplayid[ third_chunk_decoded['common']['arenaTypeID'] >>16] != first_chunk_decoded['gameplayID']:
 #      print("EERRRROOOORRRrrrrrr!!!one77")
 #      print("json:  ", first_chunk_decoded['mapName'])
-#      print("pickle:", maps[ third_chunk_decoded['common']['arenaTypeID'] & 65535 ][0])
+#      print("pickle:", maps[ third_chunk_decoded['common']['arenaTypeID'] & 65535 ])
 #      print("json:  ", first_chunk_decoded['gameplayID'])
-#      print("pickle:", mode[ third_chunk_decoded['common']['arenaTypeID'] >>16])
-      processing = 8
-      chunks_bitmask = chunks_bitmask^4
-      third_chunk_decoded = {}
+#      print("pickle:", gameplayid[ third_chunk_decoded['common']['arenaTypeID'] >>16])
+      processing =8
+#      chunks_bitmask = chunks_bitmask^4
 #      print(datetime.strptime(chunks[0]['dateTime'], '%d.%m.%Y %H:%M:%S'))
 #      print( datetime.fromtimestamp(chunks[2]['common']['arenaCreateTime']))
 #      print( mapidname[ chunks[2]['common']['arenaTypeID'] & 65535 ])
 
 
 # returns decoded_chunk[0:3], bitmap of available chunks, decoder status
-  return (("", first_chunk_decoded)[to_decode & 1], second_chunk_decoded, third_chunk_decoded), chunks_bitmask, processing
+  return (first_chunk_decoded, second_chunk_decoded, third_chunk_decoded), chunks_bitmask, processing
 
 
 def battle_result(filename):
@@ -777,12 +887,14 @@ def battle_result(filename):
 # returns decoded_chunk
 # Will throw ValueError if filename not a pickle.
 
+  battle_result_magic_number = "80024b01"
   filesize = os.path.getsize(filename)
   f = open(filename, "rb")
   chunk = f.read(filesize)
+  f.close()
 
-  if chunk[0] != 128:
-    raise ValueError(filename, "Not a pickle")
+  if chunk[0:4] != bytes.fromhex(battle_result_magic_number):
+    raise ValueError(filename, "Bad pickle magic_number")
 
   pre_preliminary = _Unpickler(io.BytesIO(chunk)).load()
   pre_preliminary = pre_preliminary[1]
@@ -796,24 +908,26 @@ def battle_result(filename):
 #  for deind, val in enumerate(common_to_decode):
 #   print(deind, val)
   common_decoded = {}
-  common_decoded["arenaTypeID"]= common_to_decode[0] & 65535
+  common_decoded["arenaTypeID"]= common_to_decode[0] # & 65535 makes more sense, but original replay keeps this number original so we will too
   common_decoded["arenaCreateTime"]= common_to_decode[1]
   common_decoded["winnerTeam"]= common_to_decode[2]
   common_decoded["finishReason"]= common_to_decode[3]
   common_decoded["duration"]= common_to_decode[4]
   common_decoded["bonusType"]= common_to_decode[5]
-  common_decoded["vehLockMode"]= common_to_decode[6]
-  common_decoded["gameplayID"]= common_to_decode[0] >>16 #this doesnt exist in replays, only in battle_result, safer to always use (arenaTypeID >>16)
+  common_decoded["vehLockMode"]= common_to_decode[7]
 
-#  common_decoded["guiType"]= common_to_decode[7] #? maybe?
+
+#  print(common_to_decode)
 
 # Some additional variables Phalynx's www.vbaddict.net/wot uses.
+#  common_decoded["guiType"]= common_to_decode[6]
+#  common_decoded["gameplayID"]= common_to_decode[0] >>16 #this doesnt exist in replays, safer to always use (arenaTypeID >>16)
 #  common_decoded["arenaCreateTimeH"]= #datetime.datetime.fromtimestamp(common_to_decode[1]).strftime("%Y-%m-%d %H:%M:%S")
 #  common_decoded["arenaTypeIcon"]= # who cares about the icon blah
 #  common_decoded["arenaTypeName"]= # maps[arenaTypeID & 65535]
 #  common_decoded["bonusTypeName"]= #1=public 2=training 3=tankcompany 5=cw
 #  common_decoded["finishReasonName"]= #1=extermination, 2=base, 3=timeout
-#  common_decoded["gameplayName"]= # (arenaTypeID >>16) 0=random/ctf, 1=domination 2=assault
+#  common_decoded["gameplayName"]= # (arenaTypeID >>16) 0=random/ctf, 1=encounter 2=assault
 #  common_decoded["gameplayTypeID"]= #probably created because Phalynx parses gameplayID wrong way :)
 
 
@@ -821,28 +935,32 @@ def battle_result(filename):
   personal_decoded = {}
 #  for deind, val in enumerate(personal_to_decode):
 #   print(deind, val)
-  personal_decoded= _Decoder.decode_vehicle(personal_to_decode)
+#  print(len(personal_to_decode))
+#  print(personal_to_decode)
+#  print(personal_decoded)
+  personal_decoded = _Decoder.decode_vehicle(personal_to_decode)
+#  pprint(personal_decoded)
 
-  personal_decoded["xpPenalty"]= personal_to_decode[30]
-  personal_decoded["creditsPenalty"]= personal_to_decode[31]
-  personal_decoded["creditsContributionIn"]= personal_to_decode[32]
-  personal_decoded["creditsContributionOut"]= personal_to_decode[33]
-  personal_decoded["tmenXP"]= personal_to_decode[34]
-  personal_decoded["eventCredits"]= personal_to_decode[35]
-  personal_decoded["eventGold"]= personal_to_decode[36]
-  personal_decoded["eventXP"]= personal_to_decode[37]
-  personal_decoded["eventFreeXP"]= personal_to_decode[38]
-  personal_decoded["eventTMenXP"]= personal_to_decode[39]
-  personal_decoded["autoRepairCost"]= personal_to_decode[40]
-  personal_decoded["autoLoadCost"]= personal_to_decode[41]
-  personal_decoded["autoEquipCost"]= personal_to_decode[42]
-  personal_decoded["isPremium"]= personal_to_decode[43]
-  personal_decoded["premiumXPFactor10"]= personal_to_decode[44]
-  personal_decoded["premiumCreditsFactor10"]= personal_to_decode[45]
-  personal_decoded["dailyXPFactor10"]= personal_to_decode[46]
-  personal_decoded["aogasFactor10"]= personal_to_decode[47]
-  personal_decoded["markOfMastery"]= personal_to_decode[48]
-  personal_decoded["dossierPopUps"]= personal_to_decode[49]
+#  personal_decoded["xpPenalty"]= personal_to_decode[30]
+#  personal_decoded["creditsPenalty"]= personal_to_decode[31]
+#  personal_decoded["creditsContributionIn"]= personal_to_decode[32]
+#  personal_decoded["creditsContributionOut"]= personal_to_decode[33]
+#  personal_decoded["tmenXP"]= personal_to_decode[34]
+#  personal_decoded["eventCredits"]= personal_to_decode[35]
+#  personal_decoded["eventGold"]= personal_to_decode[36]
+#  personal_decoded["eventXP"]= personal_to_decode[37]
+#  personal_decoded["eventFreeXP"]= personal_to_decode[38]
+#  personal_decoded["eventTMenXP"]= personal_to_decode[39]
+#  personal_decoded["autoRepairCost"]= personal_to_decode[40]
+#  personal_decoded["autoLoadCost"]= list(personal_to_decode[41])    
+#  personal_decoded["autoEquipCost"]= list(personal_to_decode[42])
+#  personal_decoded["isPremium"]= personal_to_decode[43]
+#  personal_decoded["premiumXPFactor10"]= personal_to_decode[44]
+#  personal_decoded["premiumCreditsFactor10"]= personal_to_decode[45]
+#  personal_decoded["dailyXPFactor10"]= personal_to_decode[46]
+#  personal_decoded["aogasFactor10"]= personal_to_decode[47]
+#  personal_decoded["markOfMastery"]= personal_to_decode[48]
+# personal_decoded["dossierPopUps"]= personal_to_decode[49]
 
 # Some additional variables Phalynx's www.vbaddict.net/wot uses.
 #  personal_decoded["won"]=
@@ -858,7 +976,7 @@ def battle_result(filename):
     player_decoded["clanAbbrev"]= players_to_decode[player][2].decode('unicode_escape')
     player_decoded["prebattleID"]= players_to_decode[player][3] #this is platoonID
     player_decoded["team"]= players_to_decode[player][4]
-    players_decoded[player]= player_decoded
+    players_decoded[str(player)]= player_decoded
 # Some additional variables Phalynx's www.vbaddict.net/wot uses.
 #  player_decoded["platoonID"]= #prebattleID
 #  player_decoded["vehicleid"]= #we will fill that up while decoding vehicles
@@ -868,9 +986,9 @@ def battle_result(filename):
   vehicles_decoded = {}
   for vehicle in vehicles_to_decode:
 #  for deind, val in enumerate(vehicles_to_decode[vehicle]):
-#   print(deind, val)
-    vehicles_decoded[vehicle]= _Decoder.decode_vehicle(vehicles_to_decode[vehicle])
-    players_decoded[ vehicles_decoded[vehicle]['accountDBID'] ]["vehicleid"]=vehicle
+#  print(deind, val)
+    vehicles_decoded[str(vehicle)]= _Decoder.decode_vehicle(vehicles_to_decode[vehicle])
+    players_decoded[str(vehicles_decoded[str(vehicle)]['accountDBID'])]["vehicleid"]=vehicle
   whole_thing = {}
   whole_thing['arenaUniqueID']= pre_preliminary[0]
   whole_thing['common']= common_decoded
