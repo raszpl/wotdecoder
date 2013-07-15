@@ -49,9 +49,14 @@ def custom_listfiles(path, extension, recursive, skip = None):
     files = [os.path.join(path, f) for f in os.listdir(path) if os.path.isfile(path + os.path.sep + f) and f.endswith("."+extension) and f!=skip]
   return files
 
-def getkeyboard(filename):
+def getkeyboard(fileold, *filenew):
   while True:
-    choice = input("\n"+filename+ "  already exists, overwrite? (Yes/No/All)")
+    print("old:", fileold)
+    print("    ", datetime.fromtimestamp(os.path.getmtime(fileold)).strftime('%d-%m-%y %H:%M:%S')+",", os.path.getsize(fileold), "bytes")
+    if filenew:
+      print("new:", filenew[0])
+      print("    ", datetime.fromtimestamp(os.path.getmtime(filenew[0])).strftime('%d-%m-%y %H:%M:%S')+",", os.path.getsize(filenew[0]), "bytes")
+    choice = input("\n     File already exists, overwrite? (Yes/No/All)")
     if choice == 'n' or choice == 'N':
       choice = 0
       break
@@ -229,7 +234,7 @@ def main():
       exists = os.path.isfile(fileo)
       ask = 0
       if not overwrite and exists:
-        ask = getkeyboard(fileo)
+        ask = getkeyboard(fileo, files)
         if ask == 2: overwrite = True
       else: ask = 1
 
