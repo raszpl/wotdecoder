@@ -12,7 +12,7 @@ for /R %INDIR% %%a in (*.dat) do xcopy "%%a" %OUTDIR% /q /y
 
 rem ### This is where you start the game. Uncomment the one you like or write your own.
 
-rem ### WoT with XVN Ratings
+rem ### WoT with XVM Ratings
 rem start xvm-stat.exe
 
 rem ### WoT
