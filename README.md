@@ -17,6 +17,7 @@ This program uses wotdecoder to make sense out of your replay files and sort the
   - complete    - complete replays.
   - clanwar     - replays containing complete clanwar match.
   - error       - cant recognize as a valid replay.
+  - b_r         - optional, stores dumped battle_result pickle/json
 
 Additionally it will rename your replays so they are more palatable.
 
@@ -28,13 +29,19 @@ Files suitable for datamining are in complete, result and clanwar categories.
 ###Usage
 
 ```
-wotrepparser file_or_directory -o output_directory -v -r -n
+wotrepparser file_or_directory -o output_directory -v -r -n -b -f -c0
 
 -o  Specify output directory. Default is current.
 -v  Verbose, display every file processed.
 -r  Recursive scan of all subdirectories.
 -n  Dont rename files.
+-b  Dump raw battle_results pickle to output_directory\b_r\number.pickle
+-b1 Decode battle_results pickle, save output_directory\b_r\number.json
+-b2 Same as above, but human readable json.
+-f  Force overwrite. Default is ask.
 -c  Copy instead of moving.
+-c0 Dry run, dont copy, dont move.
+
 ```
 
 ###Example
@@ -179,7 +186,7 @@ Umm, copy into your game directory and start the game with it.
 -------------
 ###Compatibility
 
-Tested with replays from 7.1 up to 8.3 WoT.
+Tested with replays from 7.1 up to 8.6 WoT.
 
 ###Requirements
 
