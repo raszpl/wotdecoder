@@ -208,7 +208,7 @@ def main():
         if rename:
           date = datetime.strptime(chunks[0]['dateTime'], '%d.%m.%Y %H:%M:%S').strftime('%Y%m%d_%H%M')
           winlose=("Loss","Win_")[chunks[2]['common']['winnerTeam'] == chunks[2]['personal']['team']]
-          fileo = date+"_"+winlose+"_"+wotdecoder.tank[chunks[2]['personal']['typeCompDescr']]+"_"+wotdecoder.maps[chunks[2]['common']['arenaTypeID'] & 65535]+".wotreplay"
+          fileo = date+"_"+winlose+"_"+wotdecoder.tank[chunks[2]['personal']['typeCompDescr']][0]+"_"+wotdecoder.maps[chunks[2]['common']['arenaTypeID'] & 65535][0]+".wotreplay"
       elif processing ==6: #bugged, but has valid score and can be renamed
         dest_index = 5
         stats[dest_index] += 1
@@ -222,7 +222,7 @@ def main():
         if rename:
           date = datetime.strptime(chunks[0]['dateTime'], '%d.%m.%Y %H:%M:%S').strftime('%Y%m%d_%H%M')
           winlose=("Loss","Win_")[chunks[2]['common']['winnerTeam'] == chunks[2]['personal']['team']]
-          fileo = date+"_"+winlose+"_"+wotdecoder.tank[chunks[2]['personal']['typeCompDescr']]+"_"+wotdecoder.maps[chunks[2]['common']['arenaTypeID'] & 65535]+".wotreplay"
+          fileo = date+"_"+winlose+"_"+wotdecoder.tank[chunks[2]['personal']['typeCompDescr']][0]+"_"+wotdecoder.maps[chunks[2]['common']['arenaTypeID'] & 65535][0]+".wotreplay"
       elif processing ==1: #incomplete
         dest_index = processing-1
         stats[dest_index] += 1

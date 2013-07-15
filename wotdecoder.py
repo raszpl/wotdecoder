@@ -703,7 +703,7 @@ else:
   f.close()
   tank = {}
   for ta in tanks:
-    tank [ (ta['tankid']<<8) + (ta['countryid']<<4) + 1 ] = ta['icon_orig']
+    tank [ (ta['tankid']<<8) + (ta['countryid']<<4) + 1 ] = (ta['icon_orig'], ta['title'])
 
 try:
   f = open("maps.json", "r")
@@ -714,7 +714,7 @@ else:
   f.close()
   maps = {}
   for ma in mapss:
-    maps [ ma['mapid'] ] = ma['mapidname']
+    maps [ ma['mapid'] ] = (ma['mapidname'], ma['mapname'])
 
 #1-4 are legit. 6-8 error, but still has some useful data. >=10 error
 status =       {
@@ -863,7 +863,7 @@ def replay(filename, to_decode):
   if chunks_bitmask&5 ==5:
 # lets check if pickle belongs to this replay
 # this is weak check, we only compare map and game mode, It can still pass some corrupted ones
-    if maps[ third_chunk_decoded['common']['arenaTypeID'] & 65535 ] !=first_chunk_decoded['mapName'] or \
+    if maps[ third_chunk_decoded['common']['arenaTypeID'] & 65535 ][0] !=first_chunk_decoded['mapName'] or \
        gameplayid[ third_chunk_decoded['common']['arenaTypeID'] >>16] != first_chunk_decoded['gameplayID']:
 #      print("EERRRROOOORRRrrrrrr!!!one77")
 #      print("json:  ", first_chunk_decoded['mapName'])
