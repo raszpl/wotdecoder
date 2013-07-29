@@ -501,6 +501,32 @@ class _Decoder:
 
     def decode_details(data):
       detail = [
+          "spotted",
+	      "deathReason",
+	      "hits",
+	      "he_hits",
+	      "pierced",
+	      "damageDealt",
+	      "damageAssistedTrack",
+	      "damageAssistedRadio",
+	      "crits",
+	      "fire"
+               ]
+      details = {}
+
+      binlen = len(data) // 22
+      datalen = 20
+#      print (len(data))
+      for x in range(0, binlen):
+        offset = 4*binlen + x*datalen
+        vehic = struct.unpack('i', data[x*4:x*4+4])[0]
+        detail_values = struct.unpack('<BbHHHHHHIH', data[offset:offset+datalen])
+        details[str(vehic)]= dict(zip(detail, detail_values))
+#        pprint (data[offset:offset+18].encode('raw_unicode_escape'))
+      return details
+
+    def decode_details_LEGACY(data):
+      detail = [
                 "spotted",
                 "killed",
                 "hits",
@@ -522,6 +548,49 @@ class _Decoder:
         details[str(vehic)]= dict(zip(detail, detail_values))
 #        pprint (data[offset:offset+18].encode('raw_unicode_escape'))
       return details
+
+
+    # Phalynx, vBAddict.net	
+    def decode_crits(details_data):
+			"""
+			Decodes the crits introduced in 0.8.6.0
+			Refer also to http://wiki.vbaddict.net/pages/Crits
+			"""
+			VEHICLE_DEVICE_TYPE_NAMES = ('engine', 'ammoBay', 'fuelTank', 'radio', 'track', 'gun', 'turretRotator', 'surveyingDevice')
+			VEHICLE_TANKMAN_TYPE_NAMES = ('commander', 'driver', 'radioman', 'gunner', 'loader')
+			for vehicleid, detail_values in details_data.items():
+		
+				if detail_values['crits']>0:
+					destroyedTankmen = detail_values['crits'] >> 24 & 255
+					destroyedDevices = detail_values['crits'] >> 12 & 4095
+					criticalDevices = detail_values['crits'] & 4095
+					critsCount = 0
+					
+					criticalDevicesList = []
+					destroyedDevicesList = []
+					destroyedTankmenList = []
+					
+					for shift in range(len(VEHICLE_DEVICE_TYPE_NAMES)):
+						if 1 << shift & criticalDevices:
+							critsCount += 1
+							criticalDevicesList.append(VEHICLE_DEVICE_TYPE_NAMES[shift])
+					
+						if 1 << shift & destroyedDevices:
+							critsCount += 1
+							destroyedDevicesList.append(VEHICLE_DEVICE_TYPE_NAMES[shift])
+					
+					for shift in range(len(VEHICLE_TANKMAN_TYPE_NAMES)):
+						if 1 << shift & destroyedTankmen:
+							critsCount += 1
+							destroyedTankmenList.append(VEHICLE_TANKMAN_TYPE_NAMES[shift])
+			
+					details_data[vehicleid]['critsCount'] = critsCount
+					details_data[vehicleid]['critsDestroyedTankmenList'] = destroyedTankmenList
+					details_data[vehicleid]['critsCriticalDevicesList'] = criticalDevicesList
+					details_data[vehicleid]['critsDestroyedDevicesList'] = destroyedDevicesList
+				
+			return details_data
+
 
     def decode_vehicle(data):
 #      print(len(data))
@@ -554,7 +623,7 @@ class _Decoder:
         vehicle["achievements"]= data[22]
         vehicle["repair"]= data[23]
         vehicle["freeXP"]= data[24]
-        vehicle["details"]= _Decoder.decode_details(data[25])
+        vehicle["details"]= _Decoder.decode_details_LEGACY(data[25])
         vehicle["accountDBID"]= data[26]
         vehicle["team"]= data[27]
         vehicle["typeCompDescr"]= data[28]
@@ -588,7 +657,7 @@ class _Decoder:
         vehicle["potentialDamageReceived"]= data[24]
         vehicle["repair"]= data[25]
         vehicle["freeXP"]= data[26]
-        vehicle["details"]= _Decoder.decode_details(data[27])
+        vehicle["details"]= _Decoder.decode_details_LEGACY(data[27])
         vehicle["accountDBID"]= data[28]
         vehicle["team"]= data[29]
         vehicle["typeCompDescr"]= data[30]
@@ -620,7 +689,7 @@ class _Decoder:
         vehicle["achievements"]= data[22]
         vehicle["repair"]= data[23]
         vehicle["freeXP"]= data[24]
-        vehicle["details"]= _Decoder.decode_details(data[25])
+        vehicle["details"]= _Decoder.decode_details_LEGACY(data[25])
         vehicle["accountDBID"]= data[26]
         vehicle["team"]= data[27]
         vehicle["typeCompDescr"]= data[28]
@@ -654,7 +723,7 @@ class _Decoder:
         vehicle["potentialDamageReceived"]= data[24]
         vehicle["repair"]= data[25]
         vehicle["freeXP"]= data[26]
-        vehicle["details"]= _Decoder.decode_details(data[27])
+        vehicle["details"]= _Decoder.decode_details_LEGACY(data[27])
         vehicle["accountDBID"]= data[28]
         vehicle["team"]= data[29]
         vehicle["typeCompDescr"]= data[30]
@@ -819,6 +888,8 @@ def replay(filename, to_decode):
           chunks_bitmask = chunks_bitmask|4
           for b in third_chunk_decoded['vehicles']:
             third_chunk_decoded['vehicles'][b]['details']= _Decoder.decode_details(third_chunk_decoded['vehicles'][b]['details'].encode('raw_unicode_escape'))
+            # Since v0.8.6
+            third_chunk_decoded['vehicles'][b]['details']= _Decoder.decode_crits(third_chunk_decoded['vehicles'][b]['details'].encode('raw_unicode_escape'))
             third_chunk_decoded['players'][ third_chunk_decoded['vehicles'][b]['accountDBID'] ]["vehicleid"]=b
         processing =2; break
       elif second_chunk[0:2] == b'[{':
@@ -848,6 +919,8 @@ def replay(filename, to_decode):
             chunks_bitmask = chunks_bitmask|4
             for b in third_chunk_decoded['vehicles']:
               third_chunk_decoded['vehicles'][b]['details']= _Decoder.decode_details(third_chunk_decoded['vehicles'][b]['details'].encode('raw_unicode_escape'))
+              # Since v0.8.6
+              third_chunk_decoded['vehicles'][b]['details']= _Decoder.decode_crits(third_chunk_decoded['vehicles'][b]['details'].encode('raw_unicode_escape'))
               third_chunk_decoded['players'][ third_chunk_decoded['vehicles'][b]['accountDBID'] ]["vehicleid"]=b
           processing =4; break
         else: processing =15; break
@@ -997,16 +1070,3 @@ def battle_result(filename):
   whole_thing['vehicles']= vehicles_decoded
 
   return whole_thing
-
-
-
-
-
-
-
-
-
-
-
-
-
