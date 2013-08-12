@@ -132,13 +132,6 @@ def main():
   matches_stats = 0
   errors = 0
 
-  f = open("tanks.json", "r")
-  tanks = json.load(f)
-  f.close()
-  tank = {}
-  for ta in tanks:
-    tank [ (ta['tankid']<<8) + (ta['countryid']<<4) + 1 ] = ta['title']
-
   owner_kills = 0
   owner_damage = 0
   owner_spotted = 0
@@ -157,11 +150,11 @@ def main():
 
       if battle_result:
         chunks = ["", "", ""]
-        chunks[2] = wotdecoder.battle_result(files)
+        chunks[2], version = wotdecoder.battle_result(files)
         chunks_bitmask = 4
         processing = 4
       else:
-        chunks, chunks_bitmask, processing = wotdecoder.replay(files, scan_mask)
+        chunks, chunks_bitmask, processing, version = wotdecoder.replay(files, scan_mask)
 
 #      pprint (chunks[0])
 #      pprint (chunks[1])chunks[2]['arenaUniqueID']
@@ -184,7 +177,7 @@ def main():
 #      print( mapidname[ chunks[2]['common']['arenaTypeID'] & 65535 ])
 #      print( chunks[0]['mapName'])
 
-      if (processing >=10) or (not chunks_bitmask&5): #ignore replays with errors, must have at least first Json or pickle
+      if (processing >8) or (not chunks_bitmask&5): #ignore replays with no useful data, must have at least first Json or pickle
         errors += 1
         if show_errors:
           print ("\n\n---")
@@ -193,8 +186,17 @@ def main():
           print ("---", end="")
         break
 
-      if processing >=6: #show error messages for recoverable errors
+      elif processing ==6: #show error messages for recoverable errors
         errors += 1
+        if show_errors:
+          print ("\n\n---")
+          print ("", ("",os.path.dirname(files)+os.path.sep)[full_path] + os.path.basename(files))
+          print (wotdecoder.status[processing])
+          print ("---", end="")
+
+      elif processing ==8: #very broken replay, only first json valid, have to disabble pickle
+        errors += 1
+        chunks_bitmask = 1
         if show_errors:
           print ("\n\n---")
           print ("", ("",os.path.dirname(files)+os.path.sep)[full_path] + os.path.basename(files))
@@ -269,12 +271,12 @@ def main():
             if chunks_bitmask&4: #is second Json available?
               if owner:
                 owner_string_kills = "| Kills  ={0:>5}".format( chunks[2]['vehicles'][vehicle_owner_found]['kills'])
-                owner_string_tank = "| {0:8} in {1:<27}".format( ("Died","Survived")[chunks[2]['vehicles'][vehicle_owner_found]['health']>0], tank[ chunks[2]['vehicles'][vehicle_owner_found]['typeCompDescr'] ])
+                owner_string_tank = "| {0:8} in {1:<27}".format( ("Died","Survived")[chunks[2]['vehicles'][vehicle_owner_found]['health']>0], wotdecoder.tank[ chunks[2]['vehicles'][vehicle_owner_found]['typeCompDescr'] ][1])
                 owner_kills += chunks[2]['vehicles'][vehicle_owner_found]['kills']
               else:
                 owner_string_kills = ""
                 owner_string_tank = ""
-              print ("{0:8} in {1:<27}{2:39}".format(("Died","Survived")[chunks[2]['vehicles'][vehicle_player_found]['health']>0], tank[ chunks[2]['vehicles'][vehicle_player_found]['typeCompDescr'] ], owner_string_tank ))
+              print ("{0:8} in {1:<27}{2:39}".format(("Died","Survived")[chunks[2]['vehicles'][vehicle_player_found]['health']>0], wotdecoder.tank[ chunks[2]['vehicles'][vehicle_player_found]['typeCompDescr'] ][1], owner_string_tank ))
               print ("Kills  ={0:>5}{1:26}{2:39}".format(chunks[2]['vehicles'][vehicle_player_found]['kills'], "", owner_string_kills ))
               player_kills += chunks[2]['vehicles'][vehicle_player_found]['kills']
               matches_kills += 1
@@ -303,6 +305,8 @@ def main():
       if verbose >2 and chunks_bitmask&4: #is pickle available? use it for detailed stats
         player = int(player)
         if owner:
+          if version >= 860:
+            chunks[2]['vehicles'][vehicle_owner_found]['damageAssisted'] = chunks[2]['vehicles'][vehicle_owner_found]['damageAssistedTrack'] + chunks[2]['vehicles'][vehicle_owner_found]['damageAssistedRadio']
           owner_string_damage = "| Damage ={0:>5}".format(chunks[2]['vehicles'][vehicle_owner_found]['damageDealt'])
           owner_string_spotted = "| Spotted={0:>5}".format(chunks[2]['vehicles'][vehicle_owner_found]['damageAssisted'])
           owner_damage += chunks[2]['vehicles'][vehicle_owner_found]['damageDealt']
@@ -311,6 +315,8 @@ def main():
           owner_string_damage = ""
           owner_string_spotted = ""
         print ("Damage ={0:>5}{1:26}{2:39}".format(chunks[2]['vehicles'][vehicle_player_found]['damageDealt'], "", owner_string_damage))
+        if version >= 860:
+          chunks[2]['vehicles'][vehicle_player_found]['damageAssisted'] = chunks[2]['vehicles'][vehicle_player_found]['damageAssistedTrack'] + chunks[2]['vehicles'][vehicle_player_found]['damageAssistedRadio']
         print ("Spotted={0:>5}{1:26}{2:39}".format(chunks[2]['vehicles'][vehicle_player_found]['damageAssisted'], "", owner_string_spotted))
         player_damage += chunks[2]['vehicles'][vehicle_player_found]['damageDealt']
         player_spotted += chunks[2]['vehicles'][vehicle_player_found]['damageAssisted']
@@ -318,7 +324,7 @@ def main():
         if battle_result: #we are decoding battle_result, lets more-or-less reconstruct potential replay name
 # its not 'pixel' accurate, im too lazy to get tank country and underscores correct.
           timestamp = datetime.fromtimestamp(chunks[2]['common']['arenaCreateTime']).strftime('%Y%m%d_%H%M')
-          print ("Belongs to~", timestamp+"_"+tank[ chunks[2]['vehicles'][vehicle_owner_found]['typeCompDescr'] ]+"_"+wotdecoder.maps[ chunks[2]['common']['arenaTypeID'] & 65535 ][0]+".wotreplay")
+          print ("Belongs to~", timestamp+"_"+wotdecoder.tank[ chunks[2]['vehicles'][vehicle_owner_found]['typeCompDescr'] ][1]+"_"+wotdecoder.maps[ chunks[2]['common']['arenaTypeID'] & 65535 ][0]+".wotreplay")
 
 
 

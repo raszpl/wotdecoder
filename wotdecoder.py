@@ -526,9 +526,11 @@ class _Decoder:
     def decode_vehicle(data):
 #      print(len(data))
 #      print(data)
+      version = 0
 
       vehicle = {}
       if len(data) == 30: # 30 = up to 8.3
+
         vehicle["health"]= data[0]
         vehicle["credits"]= data[1]
         vehicle["xp"]= data[2]
@@ -555,7 +557,7 @@ class _Decoder:
         vehicle["repair"]= data[23]
         vehicle["freeXP"]= data[24]
         vehicle["details"]= _Decoder.decode_details(data[25])
-        vehicle["accountDBID"]= data[26]
+        vehicle["accountDBID"]= str(data[26])
         vehicle["team"]= data[27]
         vehicle["typeCompDescr"]= data[28]
         vehicle["gold"]= data[29]
@@ -589,12 +591,52 @@ class _Decoder:
         vehicle["repair"]= data[25]
         vehicle["freeXP"]= data[26]
         vehicle["details"]= _Decoder.decode_details(data[27])
-        vehicle["accountDBID"]= data[28]
+        vehicle["accountDBID"]= str(data[28])
         vehicle["team"]= data[29]
         vehicle["typeCompDescr"]= data[30]
         vehicle["gold"]= data[31]
 
+      elif len(data) == 37: # 37 = 8.6
+        vehicle["health"]= data[0]
+        vehicle["credits"]= data[1]
+        vehicle["xp"]= data[2]
+        vehicle["shots"]= data[3]
+        vehicle["hits"]= data[4]
+        vehicle["thits"]= data[5]
+        vehicle["he_hits"]= data[6]
+        vehicle["pierced"]= data[7]
+        vehicle["damageDealt"]= data[8]
+        vehicle["damageAssistedRadio"]= data[9]
+        vehicle["damageAssistedTrack"]= data[10]
+        vehicle["damageReceived"]= data[11]
+        vehicle["shotsReceived"]= data[12]
+        vehicle["noDamageShotsReceived"]= data[13]
+        vehicle["heHitsReceived"]= data[14]
+        vehicle["piercedReceived"]= data[15]
+        vehicle["spotted"]= data[16]
+        vehicle["damaged"]= data[17]
+        vehicle["kills"]= data[18]
+        vehicle["tdamageDealt"]= data[19]
+        vehicle["tkills"]= data[20]
+        vehicle["isTeamKiller"]= data[21]
+        vehicle["capturePoints"]= data[22]
+        vehicle["droppedCapturePoints"]= data[23]
+        vehicle["mileage"]= data[24]
+        vehicle["lifeTime"]= data[25]
+        vehicle["killerID"]= data[26]
+        vehicle["achievements"]= data[27]
+        vehicle["potentialDamageReceived"]= data[28]
+        vehicle["repair"]= data[29]
+        vehicle["freeXP"]= data[30]
+        vehicle["details"]= _Decoder.decode_details(data[31])
+        vehicle["accountDBID"]= str(data[32])
+        vehicle["team"]= data[33]
+        vehicle["typeCompDescr"]= data[34]
+        vehicle["gold"]= data[35]
+        vehicle["deathReason"]= data[36]
+
       elif len(data) == 50: # 50 = up to 8.3
+        version = 830
         vehicle["health"]= data[0]
         vehicle["credits"]= data[1]
         vehicle["xp"]= data[2]
@@ -625,8 +667,34 @@ class _Decoder:
         vehicle["team"]= data[27]
         vehicle["typeCompDescr"]= data[28]
         vehicle["gold"]= data[29]
+        vehicle["autoRepairCost"]= data[40]
+        vehicle["xpPenalty"]= data[30]
+        vehicle["creditsPenalty"]= data[31]
+        vehicle["creditsContributionIn"]= data[32]
+        vehicle["creditsContributionOut"]= data[33]
+        vehicle["tmenXP"]= data[34]
+        vehicle["eventCredits"]= data[35]
+        vehicle["eventFreeXP"]= data[36] #[36, 38]?
+        vehicle["eventXP"]= data[37]
+        vehicle["eventGold"]= data[38] #[36, 38]?
+        vehicle["eventTMenXP"]= data[39]
+        vehicle["autoRepairCost"]= data[40]
+        vehicle["autoLoadCost"]= list(data[41])
+        vehicle["autoEquipCost"]= list(data[42])
+        vehicle["isPremium"]= data[43]
+        vehicle["premiumCreditsFactor10"]= data[44] #[44, 45]?
+        vehicle["premiumXPFactor10"]= data[45] #[44, 45]?
+        vehicle["dailyXPFactor10"]= data[46]
+        vehicle["aogasFactor10"]= data[47]
+        vehicle["markOfMastery"]= data[48]
+        if len(data[49]) >0:
+          vehicle["dossierPopUps"]= [list(item) for item in data[49]]
+        else:
+          vehicle["dossierPopUps"]= data[49]
+
 
       elif len(data) == 52: # 52 = 8.4
+        version = 840
         vehicle["health"]= data[0]
         vehicle["credits"]= data[1]
         vehicle["xp"]= data[2]
@@ -655,7 +723,7 @@ class _Decoder:
         vehicle["repair"]= data[25]
         vehicle["freeXP"]= data[26]
         vehicle["details"]= _Decoder.decode_details(data[27])
-        vehicle["accountDBID"]= data[28]
+        vehicle["accountDBID"]= str(data[28])
         vehicle["team"]= data[29]
         vehicle["typeCompDescr"]= data[30]
         vehicle["gold"]= data[31]
@@ -665,16 +733,16 @@ class _Decoder:
         vehicle["creditsContributionOut"]= data[35]
         vehicle["tmenXP"]= data[36]
         vehicle["eventCredits"]= data[37]
-        vehicle["eventFreeXP"]= data[38]
+        vehicle["eventFreeXP"]= data[38] #[40, 38]?
         vehicle["eventXP"]= data[39]
-        vehicle["eventGold"]= data[40]
+        vehicle["eventGold"]= data[40] #[40, 38]?
         vehicle["eventTMenXP"]= data[41]
         vehicle["autoRepairCost"]= data[42]
         vehicle["autoLoadCost"]= list(data[43])
         vehicle["autoEquipCost"]= list(data[44])
         vehicle["isPremium"]= data[45]
-        vehicle["premiumCreditsFactor10"]= data[46]
-        vehicle["premiumXPFactor10"]= data[47]
+        vehicle["premiumCreditsFactor10"]= data[46] #[46, 47]?
+        vehicle["premiumXPFactor10"]= data[47] #[46, 47]?
         vehicle["dailyXPFactor10"]= data[48]
         vehicle["aogasFactor10"]= data[49]
         vehicle["markOfMastery"]= data[50]
@@ -682,12 +750,95 @@ class _Decoder:
           vehicle["dossierPopUps"]= [list(item) for item in data[51]]
         else:
           vehicle["dossierPopUps"]= data[51]
-      else: raise ValueError("Dont know this format.")
 
+      elif len(data) == 60: # 60 = 8.6
+        version = 860
+        vehicle["health"]= data[0]
+        vehicle["credits"]= data[1]
+        vehicle["xp"]= data[2]
+        vehicle["shots"]= data[3]
+        vehicle["hits"]= data[4]
+        vehicle["thits"]= data[5]
+        vehicle["he_hits"]= data[6]
+        vehicle["pierced"]= data[7]
+        vehicle["damageDealt"]= data[8]
+        vehicle["damageAssistedRadio"]= data[9]
+        vehicle["damageAssistedTrack"]= data[10]
+        vehicle["damageReceived"]= data[11]
+        vehicle["shotsReceived"]= data[12]
+        vehicle["noDamageShotsReceived"]= data[13]
+        vehicle["heHitsReceived"]= data[14]
+        vehicle["piercedReceived"]= data[15]
+        vehicle["spotted"]= data[16]
+        vehicle["damaged"]= data[17]
+        vehicle["kills"]= data[18]
+        vehicle["tdamageDealt"]= data[19]
+        vehicle["tkills"]= data[20]
+        vehicle["isTeamKiller"]= data[21]
+        vehicle["capturePoints"]= data[22]
+        vehicle["droppedCapturePoints"]= data[23]
+        vehicle["mileage"]= data[24]
+        vehicle["lifeTime"]= data[25]
+        vehicle["killerID"]= data[26]
+        vehicle["achievements"]= data[27]
+        vehicle["potentialDamageReceived"]= data[28]
+        vehicle["repair"]= data[29]
+        vehicle["freeXP"]= data[30]
+        vehicle["details"]= _Decoder.decode_details(data[31])
+        vehicle["accountDBID"]= str(data[32])
+        vehicle["team"]= data[33]
+        vehicle["typeCompDescr"]= data[34]
+        vehicle["gold"]= data[35]
+        vehicle["deathReason"]= data[36]
+        vehicle["xpPenalty"]= data[37]
+        vehicle["creditsPenalty"]= data[38]
+        vehicle["creditsContributionIn"]= data[39]
+        vehicle["creditsContributionOut"]= data[40]
+        vehicle["originalCredits"]= data[41]
+        vehicle["originalXP"]= data[42]
+        vehicle["originalFreeXP"]= data[43]
+        vehicle["tmenXP"]= data[44]
+        vehicle["eventCredits"]= data[45]
+        vehicle["eventFreeXP"]= data[46] #[48, 46]?
+        vehicle["eventXP"]= data[47]
+        vehicle["eventGold"]= data[48] #[48, 46]?
+        vehicle["eventTMenXP"]= data[49]
+        vehicle["autoRepairCost"]= data[50]
+        vehicle["autoLoadCost"]= list(data[51])
+        vehicle["autoEquipCost"]= list(data[52])
+        vehicle["isPremium"]= data[53]
+        vehicle["premiumCreditsFactor10"]= data[54] #[54, 55]?
+        vehicle["premiumXPFactor10"]= data[55] #[54, 55]?
+        vehicle["dailyXPFactor10"]= data[56]
+        vehicle["aogasFactor10"]= data[57]
+        vehicle["markOfMastery"]= data[58]
+        if len(data[59]) >0:
+          vehicle["dossierPopUps"]= [list(item) for item in data[59]]
+        else:
+          vehicle["dossierPopUps"]= data[59]
+
+      else: 
+# This is for reverse engineering purposes, I wrote separate script automagically correlating binary data by comparing
+# battle_result.dat files with corresponding replay pickle parts.
+
+        version = 1
+        for x in range (0, len(data)):
+          if isinstance(data[x], list) and (len(data[x]) >0):
+           if isinstance(data[x][0], tuple):
+            vehicle[x]= [list(item) for item in data[x]]
+           else:
+            vehicle[x]= list(data[x])
+          elif isinstance(data[x], tuple):
+            vehicle[x]= list(data[x])
+          else:
+            vehicle[x]= data[x]
+
+        print (len(data))
+        pprint(vehicle)
+        raise ValueError("Dont know this format.")
 #        pprint (data)
-
-#      pprint (vehicle)
-      return vehicle
+#        pprint (vehicle)
+      return vehicle, version
 #    vehicle["achievementlist"]=
 #    vehicle["countryID"]= #look up tanks.json
 #    vehicle["tankID"]= data[28] >>8 #8 upper bits of typeCompDescr
@@ -703,6 +854,7 @@ else:
   f.close()
   tank = {}
   for ta in tanks:
+# tank [typeCompDescr] = name
     tank [ (ta['tankid']<<8) + (ta['countryid']<<4) + 1 ] = (ta['icon_orig'], ta['title'])
 
 try:
@@ -876,9 +1028,72 @@ def replay(filename, to_decode):
 #      print( datetime.fromtimestamp(chunks[2]['common']['arenaCreateTime']))
 #      print( mapidname[ chunks[2]['common']['arenaTypeID'] & 65535 ])
 
+#guesstimating version, reliable only since 8.6 because WG added version string, earlier ones can be ~guessed by counting data or comparing dates
+  if chunks_bitmask&1 ==1:
+   if "clientVersionFromExe" in first_chunk_decoded:
+    version = int(first_chunk_decoded["clientVersionFromExe"].replace(', ',''))
+#    print (first_chunk_decoded["clientVersionFromExe"], version)
+   else:
+    
+#8.7
+#July 29, 2013
+#8.4
+#05 Mar 2013
+#8.3
+#16 Jan 2013
+#8.2
+#12 Dec 2012
+#8.1
+#Mar 13 2013
+#8.0
+#Sep 24 2012 
+#7.5
+#04.08.2012
+#7.4
+#20.06.2012
+#7.3
+#11.05.2012
+#7.2
+#30.03.2012
+#7.1
+#05.01.2012
+#7.0
+#19.12.2011
+#6.7
+#15.09.2011
+#6.6
+#10.08.2011
+#6.5
+#Jun 14 2011
+#6.4
+#Mar 12 2011
+#6.3.11
+#Apr 12 2011
+#6.3.10
+#Apr 07 2011
+#6.3.9
+#Mar 22 2011
+#6.3
+#Jan 15 2011
+#6.2.8
+#Dec 28 2010
+#6.2.7
+#Dec 23 2010
+#6.2
+#Dec 01 2010
+#6.1.5
+#Sep 28 2010
+#5.5
+#Oct 21 2010
+#5.4.1
+#Jul 16 2010    
 
-# returns decoded_chunk[0:3], bitmap of available chunks, decoder status
-  return (first_chunk_decoded, second_chunk_decoded, third_chunk_decoded), chunks_bitmask, processing
+    version = 830 # no clue, lets default to safe 8.3
+  else:
+   version = 0 #no first chunk = no version
+
+# returns decoded_chunk[0:3], bitmap of available chunks, decoder status, ~version
+  return (first_chunk_decoded, second_chunk_decoded, third_chunk_decoded), chunks_bitmask, processing, version
 
 
 def battle_result(filename):
@@ -908,12 +1123,13 @@ def battle_result(filename):
 #  for deind, val in enumerate(common_to_decode):
 #   print(deind, val)
   common_decoded = {}
-  common_decoded["arenaTypeID"]= common_to_decode[0] # & 65535 makes more sense, but original replay keeps this number original so we will too
+  common_decoded["arenaTypeID"]= common_to_decode[0] # & 65535 makes more sense, but original replay keeps this number intact
   common_decoded["arenaCreateTime"]= common_to_decode[1]
   common_decoded["winnerTeam"]= common_to_decode[2]
   common_decoded["finishReason"]= common_to_decode[3]
   common_decoded["duration"]= common_to_decode[4]
   common_decoded["bonusType"]= common_to_decode[5]
+  common_decoded["guiType"]= common_to_decode[6]
   common_decoded["vehLockMode"]= common_to_decode[7]
 
 
@@ -938,7 +1154,7 @@ def battle_result(filename):
 #  print(len(personal_to_decode))
 #  print(personal_to_decode)
 #  print(personal_decoded)
-  personal_decoded = _Decoder.decode_vehicle(personal_to_decode)
+  personal_decoded, version = _Decoder.decode_vehicle(personal_to_decode)
 #  pprint(personal_decoded)
 
 #  personal_decoded["xpPenalty"]= personal_to_decode[30]
@@ -987,8 +1203,8 @@ def battle_result(filename):
   for vehicle in vehicles_to_decode:
 #  for deind, val in enumerate(vehicles_to_decode[vehicle]):
 #  print(deind, val)
-    vehicles_decoded[str(vehicle)]= _Decoder.decode_vehicle(vehicles_to_decode[vehicle])
-    players_decoded[str(vehicles_decoded[str(vehicle)]['accountDBID'])]["vehicleid"]=vehicle
+    vehicles_decoded[str(vehicle)], v= _Decoder.decode_vehicle(vehicles_to_decode[vehicle])
+#    players_decoded[str(vehicles_decoded[vehicle]['accountDBID'])]["vehicleid"]=vehicle
   whole_thing = {}
   whole_thing['arenaUniqueID']= pre_preliminary[0]
   whole_thing['common']= common_decoded
@@ -996,7 +1212,7 @@ def battle_result(filename):
   whole_thing['players']= players_decoded
   whole_thing['vehicles']= vehicles_decoded
 
-  return whole_thing
+  return whole_thing, version
 
 
 

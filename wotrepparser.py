@@ -170,7 +170,7 @@ def main():
 #      print ("\n"+files)
       fileo = os.path.basename(files)
 
-      chunks, chunks_bitmask, processing = wotdecoder.replay(files,7) #7 means try to decode all three blocks (binary 111)
+      chunks, chunks_bitmask, processing, version = wotdecoder.replay(files,7) #7 means try to decode all three blocks (binary 111)
 
       if processing == 3 and (len(chunks[0]['vehicles'])!=len(chunks[1][1])) or \
          processing == 4 and chunks[2]['common']['bonusType'] == 5: #fogofwar = cw, bonusType = 5 = cw
