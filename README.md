@@ -26,7 +26,7 @@ have results saved in a replay of a game you quit. This is important if you want
 Files suitable for datamining are in complete, result and clanwar categories.
 (WoT is buggy and sometimes saves same battle_result pickle into more than one replay file.)
 
-###Usage
+### Usage
 
 ```
 wotrepparser file_or_directory -o output_directory -v -r -n -b -f -c0
@@ -44,7 +44,7 @@ wotrepparser file_or_directory -o output_directory -v -r -n -b -f -c0
 
 ```
 
-###Example
+### Example
 
 ```
 wotrepparser g:\World_of_Tanks\replays -o d:\replays -v -r
@@ -53,7 +53,7 @@ wotrepparser g:\World_of_Tanks\replays -o d:\replays -v -r
 When executed creates 5 subdirectories (incomplete, result, complete, clanwar, error) in d:\replays. 
 Next it scans g:\World_of_Tanks\replays recursively for .wotreplay files, renames and moves them accordingly.
 
-###Performance
+### Performance
 
 ST31000523AS HDD and 3GHz cpu gives ~25 replays per second
 ```
@@ -69,7 +69,7 @@ Took 16117.286ms
 
 Verbose parameter slows it dramatically under windows console.
 
-###Renaming convention
+### Renaming convention
 
 
 Clanwar replay file
@@ -106,7 +106,7 @@ Format can be easily edited further in wotrepparser.py.
 This program scans replay(.wotreplay) or battle_result(.dat) files for players using nickname and/or clantag.
 (Currently it stops after finding first match per replay.)
 
-###Usage
+### Usage
 
 ```
 findplayer nickname [clantag] -c -v0..3 -e -o -r -p -b -i input_file_or_directory
@@ -132,7 +132,7 @@ Try `*` for string wildcard, `?` for character wildcard.
 `*` will match everyone.
 ```
 
-###Example stat summary output:
+### Example stat summary output:
 
 ```
 G:\World_of_Tanks\replays>python findplayer.py kawagreen -o -v4
@@ -177,7 +177,7 @@ one session, every time you start the game it deletes old ones. This bat file wi
 
 and copy all .dat files it can find to .\replays\battle_results\
 
-###Usage
+### Usage
 
 Umm, copy into your game directory and start the game with it.
 
